@@ -30,6 +30,9 @@ $items = $wpdb->get_results(
     WHERE status = 'active' 
     ORDER BY category, name"
 );
+
+// Get all clients for dropdown
+$clients = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}film_clients ORDER BY name");
 ?>
 
 <div class="wrap">
@@ -41,6 +44,27 @@ $items = $wpdb->get_results(
             <input type="hidden" name="session_id" value="<?php echo $edit_id; ?>">
             
             <table class="form-table">
+                <tr>
+                    <th><label for="client_id">Client</label></th>
+                    <td>
+                        <select name="client_id" id="client_id">
+                            <option value="">Select Client (Optional)</option>
+                            <?php foreach ($clients as $client): ?>
+                                <option value="<?php echo $client->id; ?>" 
+                                        <?php selected($rental_session && $rental_session->client_id == $client->id); ?>>
+                                    <?php echo esc_html($client->name); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="notes">Project Name</label></th>
+                    <td>
+                        <input type="text" id="notes" name="notes" class="regular-text"
+                               value="<?php echo $rental_session ? esc_attr($rental_session->notes) : ''; ?>">
+                    </td>
+                </tr>
                 <tr>
                     <th><label for="rental_date">Rental Date</label></th>
                     <td>
@@ -66,7 +90,7 @@ $items = $wpdb->get_results(
                                     <div class="rental-item">
                                         <select name="equipment[]" class="equipment-select" required>
                                             <option value="">Select Equipment</option>
-                                            <?php foreach (FER_CATEGORIES as $slug => $category): ?>
+                                            <?php foreach (fer_get_categories() as $slug => $category): ?>
                                                 <optgroup label="<?php echo esc_attr($category); ?>">
                                                     <?php 
                                                     $category_items = array_filter($items, function($equip) use ($slug) {
@@ -76,7 +100,7 @@ $items = $wpdb->get_results(
                                                         <option value="<?php echo $equip->id; ?>" 
                                                                 data-rate="<?php echo $equip->daily_rate; ?>"
                                                                 <?php selected($equip->id, $item->equipment_id); ?>>
-                                                            <?php echo esc_html($equip->name); ?> 
+                                                            <?php echo esc_html((isset($equip->brand) ? $equip->brand . ' ' : '') . $equip->name); ?> 
                                                             (<?php echo fer_format_currency($equip->daily_rate); ?>/day)
                                                         </option>
                                                     <?php endforeach; ?>
@@ -94,7 +118,7 @@ $items = $wpdb->get_results(
                                 <div class="rental-item">
                                     <select name="equipment[]" class="equipment-select" required>
                                         <option value="">Select Equipment</option>
-                                        <?php foreach (FER_CATEGORIES as $slug => $category): ?>
+                                        <?php foreach (fer_get_categories() as $slug => $category): ?>
                                             <optgroup label="<?php echo esc_attr($category); ?>">
                                                 <?php 
                                                 $category_items = array_filter($items, function($item) use ($slug) {
@@ -103,7 +127,7 @@ $items = $wpdb->get_results(
                                                 foreach ($category_items as $item): ?>
                                                     <option value="<?php echo $item->id; ?>" 
                                                             data-rate="<?php echo $item->daily_rate; ?>">
-                                                        <?php echo esc_html($item->name); ?> 
+                                                        <?php echo esc_html((isset($item->brand) ? $item->brand . ' ' : '') . $item->name); ?> 
                                                         (<?php echo fer_format_currency($item->daily_rate); ?>/day)
                                                     </option>
                                                 <?php endforeach; ?>
@@ -120,10 +144,18 @@ $items = $wpdb->get_results(
                     </td>
                 </tr>
                 <tr>
-                    <th><label for="notes">Project Name</label></th>
+                    <th><label for="package_deal">Package Deal?</label></th>
                     <td>
-                        <input type="text" id="notes" name="notes" class="regular-text"
-                               value="<?php echo $rental_session ? esc_attr($rental_session->notes) : ''; ?>">
+                        <select id="package_deal" name="package_deal">
+                            <option value="no" <?php echo $rental_session && $rental_session->package_deal === 'no' ? 'selected' : ''; ?>>No</option>
+                            <option value="yes" <?php echo $rental_session && $rental_session->package_deal === 'yes' ? 'selected' : ''; ?>>Yes</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr id="package_amount_row" style="display: <?php echo $rental_session && $rental_session->package_deal === 'yes' ? '' : 'none'; ?>;">
+                    <th><label for="package_amount">Package Amount</label></th>
+                    <td>
+                        <input type="number" id="package_amount" name="package_amount" step="0.01" min="0" placeholder="Total Package Amount" value="<?php echo $rental_session ? esc_attr($rental_session->package_amount) : ''; ?>">
                     </td>
                 </tr>
             </table>
@@ -154,3 +186,71 @@ $items = $wpdb->get_results(
     </div>
     <?php fer_output_footer(); ?>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const packageDealSelect = document.getElementById('package_deal');
+    const packageAmountRow = document.getElementById('package_amount_row');
+    const packageAmountInput = document.getElementById('package_amount');
+    const rentalItemsContainer = document.getElementById('rental-items');
+    const standardTotalElement = document.getElementById('standard-total');
+    const actualTotalElement = document.getElementById('actual-total');
+    const totalDiscountElement = document.getElementById('total-discount');
+    const rentalDaysInput = document.getElementById('rental_days');
+
+    packageDealSelect.addEventListener('change', function() {
+        if (this.value === 'yes') {
+            packageAmountRow.style.display = '';
+        } else {
+            packageAmountRow.style.display = 'none';
+            packageAmountInput.value = '';
+            updateSummary();
+        }
+    });
+
+    rentalItemsContainer.addEventListener('input', updateSummary);
+    packageAmountInput.addEventListener('input', updateSummary);
+    rentalDaysInput.addEventListener('input', updateSummary);
+
+    function updateSummary() {
+        const rentalItems = rentalItemsContainer.querySelectorAll('.rental-item');
+        const rentalDays = parseInt(rentalDaysInput.value) || 1;
+        let standardTotal = 0;
+        let actualTotal = 0;
+
+        rentalItems.forEach(item => {
+            const equipmentSelect = item.querySelector('.equipment-select');
+            const earningsInput = item.querySelector('input[name="earnings[]"]');
+            const dailyRate = parseFloat(equipmentSelect.selectedOptions[0].getAttribute('data-rate')) || 0;
+
+            if (packageDealSelect.value === 'no') {
+                earningsInput.value = (dailyRate * rentalDays).toFixed(2);
+            }
+
+            const earnings = parseFloat(earningsInput.value) || 0;
+
+            standardTotal += dailyRate * rentalDays;
+            actualTotal += earnings;
+        });
+
+        if (packageDealSelect.value === 'yes' && packageAmountInput.value) {
+            actualTotal = parseFloat(packageAmountInput.value);
+            const rebate = (standardTotal - actualTotal) / standardTotal;
+            rentalItems.forEach(item => {
+                const equipmentSelect = item.querySelector('.equipment-select');
+                const earningsInput = item.querySelector('input[name="earnings[]"]');
+                const dailyRate = parseFloat(equipmentSelect.selectedOptions[0].getAttribute('data-rate')) || 0;
+                earningsInput.value = (dailyRate * rentalDays * (1 - rebate)).toFixed(2);
+            });
+        }
+
+        const discountPercentage = standardTotal > 0 ? ((standardTotal - actualTotal) / standardTotal) * 100 : 0;
+
+        standardTotalElement.textContent = `€${standardTotal.toFixed(2)}`;
+        actualTotalElement.textContent = `€${actualTotal.toFixed(2)}`;
+        totalDiscountElement.textContent = `${discountPercentage.toFixed(2)}%`;
+    }
+
+    updateSummary();
+});
+</script>

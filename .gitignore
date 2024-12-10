@@ -5,3 +5,10 @@ admin/assets/css/
 public/assets/css/
 admin/assets/js/*.min.js
 public/assets/js/*.min.js
+composer.json
+composer.lock
+phpunit.xml
+tests/
+.phpunit.*
+vendor/
+sql_dumps/

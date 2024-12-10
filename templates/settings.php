@@ -16,7 +16,10 @@ if (!defined('ABSPATH')) exit;
                 $date_format = get_option('fer_date_format', 'Y-m-d');
                 $items_per_page = get_option('fer_items_per_page', 12);
                 $enable_categories = get_option('fer_enable_categories', '1');
-                $default_image = get_option('default_image', "");
+                $default_image = get_option('fer_default_image', "");
+                $categories = get_option('fer_categories', FER_DEFAULT_CATEGORIES);
+                $brands = fer_get_brands();
+                sort($brands);
                 ?>
                 
                 <h2>Currency Settings</h2>
@@ -88,8 +91,72 @@ if (!defined('ABSPATH')) exit;
                     </tr>
                 </table>
 
+                <h2>Categories</h2>
+                <table class="form-table">
+                    <tr>
+                        <th>Equipment Categories</th>
+                        <td>
+                            <div id="equipment-categories" class="sortable">
+                                <?php
+                                foreach ($categories as $slug => $name): ?>
+                                    <div class="category-item">
+                                        <input type="text" 
+                                               name="fer_categories[<?php echo esc_attr($slug); ?>]" 
+                                               value="<?php echo esc_attr($name); ?>"
+                                               class="regular-text">
+                                        <button type="button" class="button remove-category">×</button>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <button type="button" class="button" id="add-category">Add Category</button>
+                            <p class="description">Define equipment categories. These will be used for organizing equipment in lists and forms.</p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h2>Brands</h2>
+                <table class="form-table">
+                    <tr valign="top">
+                        <th scope="row">Brands</th>
+                        <td>
+                            <textarea name="fer_brands" rows="10" cols="50" class="large-text code"><?php echo esc_textarea(implode("\n", $brands)); ?></textarea>
+                            <input type="hidden" name="fer_brands_hidden" id="fer_brands_hidden" value="<?php echo esc_textarea(implode("\n", $brands)); ?>">
+                            <p class="description">Enter one brand per line.</p>
+                        </td>
+                    </tr>
+                </table>
+
                 <?php submit_button(); ?>
             </form>
         </div>
         <?php fer_output_footer(); ?>
     </div>
+
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+    $('#add-category').click(function() {
+        var timestamp = new Date().getTime();
+        var newCategory = $('<div class="category-item">' +
+            '<input type="text" name="fer_categories[new_' + timestamp + ']" value="" class="regular-text">' +
+            '<button type="button" class="button remove-category">×</button>' +
+            '</div>');
+        $('#equipment-categories').append(newCategory);
+    });
+
+    $('#equipment-categories').on('click', '.remove-category', function() {
+        if ($('.category-item').length > 1) {
+            $(this).closest('.category-item').remove();
+        } else {
+            alert('You must keep at least one category.');
+        }
+    });
+
+    $('#equipment-categories').sortable({
+        placeholder: "ui-state-highlight"
+    });
+
+    $('form').submit(function() {
+        $('#fer_brands_hidden').val($('textarea[name="fer_brands"]').val());
+    });
+});
+</script>

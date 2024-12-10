@@ -9,12 +9,19 @@ $items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}film_equipment ORDER B
 $enable_categories = get_option('fer_enable_categories', '1');
 $items_per_page = get_option('fer_items_per_page', 12);
 $default_image = get_option('fer_default_image', '');
+$categories = fer_get_categories();
 ?>
+<style>
+    
+</style>
+<div class="fer-search-bar">
+    <input type="text" id="fer-search-input" placeholder="Search equipment...">
+</div>
 <div class="fer-equipment-list">
     <?php 
     if ($enable_categories === '1') {
         // Display with categories
-        foreach (FER_CATEGORIES as $slug => $category): 
+        foreach ($categories as $slug => $category): 
             $category_items = array_filter($items, function($item) use ($slug) {
                 return $item->category === $slug && $item->status === 'active';
             });
@@ -36,9 +43,12 @@ $default_image = get_option('fer_default_image', '');
                             $image_url = !empty($item->image_url) ? $item->image_url : $default_image;
                             if ($image_url): ?>
                                 <img src="<?php echo esc_url($image_url); ?>" 
-                                     alt="<?php echo esc_attr($item->name); ?>">
+                                     alt="<?php echo esc_attr($item->name); ?>" 
+                                     class="fer-lightbox-trigger">
+                            <?php else: ?>
+                                <div class="fer-placeholder">No Image</div>
                             <?php endif; ?>
-                            <h3><?php echo esc_html($item->name); ?></h3>
+                            <h3><?php echo esc_html((isset($item->brand) ? $item->brand . ' ' : '') . $item->name); ?></h3>
                             <div class="fer-short-description">
                                 <?php echo wp_kses_post(trim($item->short_description ?? '')); ?>
                             </div>
@@ -73,9 +83,12 @@ $default_image = get_option('fer_default_image', '');
                     $image_url = !empty($item->image_url) ? $item->image_url : $default_image;
                     if ($image_url): ?>
                         <img src="<?php echo esc_url($image_url); ?>" 
-                             alt="<?php echo esc_attr($item->name); ?>">
+                             alt="<?php echo esc_attr($item->name); ?>" 
+                             class="fer-lightbox-trigger">
+                    <?php else: ?>
+                        <div class="fer-placeholder">No Image</div>
                     <?php endif; ?>
-                    <h3><?php echo esc_html($item->name); ?></h3>
+                    <h3><?php echo esc_html((isset($item->brand) ? $item->brand . ' ' : '') . $item->name); ?></h3>
                     <div class="fer-short-description">
                         <?php echo wp_kses_post(trim($item->short_description ?? '')); ?>
                     </div>
@@ -90,4 +103,10 @@ $default_image = get_option('fer_default_image', '');
             <?php endforeach; ?>
         </div>
     <?php } ?>
+</div>
+<div id="fer-lightbox" class="fer-lightbox">
+    <span class="fer-lightbox-close">&times;</span>
+    <div class="fer-lightbox-content">
+        <img id="fer-lightbox-img" src="" alt="">
+    </div>
 </div>

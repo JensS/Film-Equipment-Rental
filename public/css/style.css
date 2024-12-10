@@ -74,3 +74,66 @@
     padding-top: 15px;
     border-top: 1px solid #eee;
 }
+
+.fer-equipment-list { display: flex; flex-wrap: wrap; gap: 20px; }
+    .fer-category-section { margin-bottom: 40px; }
+    .fer-items-grid { display: flex; flex-wrap: wrap; gap: 20px; }
+    .fer-item { border: 1px solid #ddd; padding: 10px; width: calc(25% - 20px); box-sizing: border-box; }
+    .fer-item img { max-width: 100%; height: auto; }
+    .fer-item h3 { font-size: 1.2em; margin: 10px 0; }
+    .fer-short-description { font-size: 0.9em; color: #666; }
+    .fer-daily-rate { font-weight: bold; color: #333; }
+    .fer-show-more { background: #0073aa; color: #fff; border: none; padding: 5px 10px; cursor: pointer; }
+    .fer-search-bar {
+        margin-bottom: 20px;
+        text-align: right;
+        max-width: none;
+    }
+    .fer-search-bar input {
+        padding: 5px;
+        font-size: 1em;
+        width: 300px;
+    }
+    .fer-placeholder {
+        width: 100%;
+        height: 200px;
+        background-color: #ccc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        font-size: 1.2em;
+    }
+    .fer-lightbox {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.8);
+        max-width: none;
+    }
+    .fer-lightbox-content {
+        position: relative;
+        margin: auto;
+        padding: 20px;
+        width: 80%;
+        max-width: 800px;
+        padding-top: 20%;
+    }
+    .fer-lightbox-content img {
+        width: 100%;
+        height: auto;
+    }
+    .fer-lightbox-close {
+        position: absolute;
+        top: 10px;
+        right: 25px;
+        color: #fff;
+        font-size: 35px;
+        font-weight: bold;
+        cursor: pointer;
+    }
