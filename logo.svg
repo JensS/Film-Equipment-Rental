@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Shelf Structure -->
+  <path d="
+    M15 15
+    h70
+    v70
+    h-70
+    Z" fill="#1a1a1a"/>
+    
+  <!-- Shelf Verticals -->
+  <path d="
+    M15 15
+    h4
+    v70
+    h-4
+    Z
+    M48 15
+    h4
+    v70
+    h-4
+    Z
+    M81 15
+    h4
+    v70
+    h-4
+    Z" fill="#333333"/>
+    
+  <!-- Shelf Horizontals -->
+  <path d="
+    M15 15
+    h70
+    v3
+    h-70
+    Z
+    M15 35
+    h70
+    v3
+    h-70
+    Z
+    M15 55
+    h70
+    v3
+    h-70
+    Z
+    M15 82
+    h70
+    v3
+    h-70
+    Z" fill="#333333"/>
+    
+  <!-- Equipment Items -->
+  <!-- Cases -->
+  <path d="
+    M20 20
+    h25
+    v12
+    h-25
+    Z" fill="#666666"/>
+    
+  <path d="
+    M55 20
+    h20
+    v12
+    h-20
+    Z" fill="#666666"/>
+    
+  <!-- Lights -->
+  <path d="
+    M22 40
+    h10
+    l2 2 
+    v8
+    l-2 2
+    h-10
+    Z" fill="#666666"/>
+    
+  <path d="
+    M37 40
+    h10
+    l2 2
+    v8
+    l-2 2
+    h-10
+    Z" fill="#666666"/>
+    
+  <!-- Tripods -->
+  <path d="
+    M55 38
+    h4
+    v15
+    h-4
+    Z" fill="#666666"/>
+    
+  <path d="
+    M65 38
+    h4
+    v15
+    h-4
+    Z" fill="#666666"/>
+    
+  <path d="
+    M75 38
+    h4
+    v15
+    h-4
+    Z" fill="#666666"/>
+    
+  <!-- Small Items/Boxes -->
+  <path d="
+    M20 60
+    h20
+    v10
+    h-20
+    Z
+    M20 73
+    h20
+    v7
+    h-20
+    Z" fill="#666666"/>
+    
+  <!-- Labels/Details -->
+  <path d="
+    M22 62
+    h16
+    v2
+    h-16
+    Z
+    M22 75
+    h16
+    v2
+    h-16
+    Z" fill="#999999"/>
+    
+  <!-- Equipment Details -->
+  <path d="
+    M57 42
+    h2
+    v7
+    h-2
+    Z
+    M67 42
+    h2
+    v7
+    h-2
+    Z
+    M77 42
+    h2
+    v7
+    h-2
+    Z" fill="#999999"/>
+    
+  <!-- Case Details -->
+  <path d="
+    M23 23
+    h19
+    v2
+    h-19
+    Z
+    M58 23
+    h14
+    v2
+    h-14
+    Z" fill="#999999"/>
+    
+  <!-- Additional Storage Boxes -->
+  <path d="
+    M55 60
+    h25
+    v20
+    h-25
+    Z" fill="#666666"/>
+    
+  <path d="
+    M58 65
+    h19
+    v2
+    h-19
+    Z
+    M58 70
+    h19
+    v2
+    h-19
+    Z" fill="#999999"/>
+</svg>

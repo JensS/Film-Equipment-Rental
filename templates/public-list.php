@@ -127,7 +127,10 @@ document.getElementById('fer-download-pdf').addEventListener('click', function()
     var data = { items: items, rentalDays: rentalDays };
     fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>'
+        },
         body: JSON.stringify({ action: 'fer_generate_pdf', data: data })
     })
     .then(response => response.blob())
@@ -139,6 +142,7 @@ document.getElementById('fer-download-pdf').addEventListener('click', function()
         document.body.appendChild(a);
         a.click();
         a.remove();
-    });
+    })
+    .catch(error => console.error('Error:', error));
 });
 </script>
