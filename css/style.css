@@ -131,7 +131,10 @@
 .fer-admin-footer a:hover {
     color: #135e96;
 }
-
+#equipment-table .fer_placeholder svg {
+    width: 60px;
+    height: 60px;
+}
 /* Form elements */
 .fer-add-rental-form input[type="text"],
 .fer-add-rental-form input[type="number"],
