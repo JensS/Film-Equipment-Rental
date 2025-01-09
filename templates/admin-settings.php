@@ -16,6 +16,7 @@ if (!defined('ABSPATH')) exit;
                 $date_format = get_option('fer_date_format', 'Y-m-d');
                 $items_per_page = get_option('fer_items_per_page', 12);
                 $enable_categories = get_option('fer_enable_categories', '1');
+                $default_image = get_option('fer_default_image', "");
                 $categories = get_option('fer_categories', FER_DEFAULT_CATEGORIES);
                 $brands = fer_get_brands();
                 sort($brands);
@@ -76,6 +77,21 @@ if (!defined('ABSPATH')) exit;
                                        <?php checked($enable_categories, '1'); ?>>
                                 Enable category grouping on public page
                             </label>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th><label for="default_image">Default Image URL</label></th>
+                        <td>
+                            <input type="url" id="default_image" name="fer_default_image" 
+                                value="<?php echo esc_url($default_image); ?>" class="regular-text">
+                            <button type="button" class="button media-button" id="upload-default-image">Choose Image</button>
+                            <p class="description">Default image for equipment without a specific image</p>
+                            <div id="default-image-preview">
+                                <?php if ($default_image): ?>
+                                    <img src="<?php echo esc_url($default_image); ?>" style="max-width: 200px; margin-top: 10px;">
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                 </table>

@@ -6,8 +6,7 @@ $equipment_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $equipment = $equipment_id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}film_equipment WHERE id = %d", $equipment_id)) : null;
 ?>
 <div class="wrap">
-    <h1><?php echo $equipment_id ? 'Edit Equipment' : 'Add New Equipment'; ?></h1>
-    
+    <h1>Add Equipment</h1>
     <div class="fer-equipment-form">
         <form id="fer-equipment-form" method="post">
             <?php wp_nonce_field('fer_nonce', 'fer_nonce'); ?>
@@ -41,10 +40,10 @@ $equipment = $equipment_id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb
                     <th><label for="category">Category</label></th>
                     <td>
                         <select id="category" name="category" required>
-                            <?php foreach (fer_get_categories() as $slug => $name): ?>
+                            <?php foreach (fer_get_categories() as $slug => $category): ?>
                                 <option value="<?php echo $slug; ?>" 
                                     <?php echo $equipment && $equipment->category === $slug ? 'selected' : ''; ?>>
-                                    <?php echo esc_html($name); ?>
+                                    <?php echo esc_html($category["name"]); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -83,6 +82,13 @@ $equipment = $equipment_id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb
                     <td>
                         <input type="date" id="purchase_date" name="purchase_date" 
                                value="<?php echo $equipment ? esc_attr($equipment->purchase_date) : ''; ?>">
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="current_value">Current Value (€)</label></th>
+                    <td>
+                        <input type="number" id="current_value" name="current_value" step="0.01" min="0" 
+                               value="<?php echo $equipment ? esc_attr($equipment->current_value) : ''; ?>">
                     </td>
                 </tr>
                 <tr>

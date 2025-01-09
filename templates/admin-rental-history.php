@@ -12,7 +12,8 @@ $sessions = $wpdb->get_results("
         GROUP_CONCAT(e.name SEPARATOR ', ') as equipment_names,
         SUM(ee.earnings) as total_earnings,
         SUM(e.daily_rate * rs.rental_days) as standard_total,
-        (SUM(e.daily_rate * rs.rental_days) - SUM(ee.earnings)) as total_discount
+        (SUM(e.daily_rate * rs.rental_days) - SUM(ee.earnings)) as total_discount,
+        rs.package_deal
     FROM $sessions_table rs
     JOIN $earnings_table ee ON rs.id = ee.session_id
     JOIN $equipment_table e ON ee.equipment_id = e.id
@@ -38,6 +39,7 @@ $sessions = $wpdb->get_results("
                     <th data-sort="total_earnings">Actual Income</th>
                     <th data-sort="total_discount">Discount</th>
                     <th data-sort="notes">Notes</th>
+                    <th data-sort="package_deal">Package Deal</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -55,6 +57,7 @@ $sessions = $wpdb->get_results("
                         <td><?php echo fer_format_currency($session->total_earnings); ?></td>
                         <td><?php echo number_format($discount_percentage, 1); ?>%</td>
                         <td><?php echo esc_html($session->notes); ?></td>
+                        <td><?php echo $session->package_deal ? 'Yes' : 'No'; ?></td>
                         <td>
                             <a href="<?php echo admin_url('admin.php?page=add-rental&edit=' . $session->id); ?>" 
                             class="button button-small">Edit</a>

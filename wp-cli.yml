@@ -1,0 +1,4 @@
+path: ../../../
+require:
+  - cli/cli.php
+--color: true

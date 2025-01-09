@@ -6,7 +6,6 @@ $stats = fer_get_statistics($year === 'all' ? null : intval($year));
 $years = fer_get_available_years();
 $timespan_label = $year === 'all' ? 'All Time' : intval($year);
 ?>
-
 <div class="wrap">
     <h1>Equipment Statistics</h1>
 
@@ -76,7 +75,7 @@ $timespan_label = $year === 'all' ? 'All Time' : intval($year);
                                 <td><?php echo fer_format_currency($item->purchase_price); ?></td>
                                 <td class="fer-value" data-value="<?php echo $item->total_earnings; ?>"><?php echo fer_format_currency($item->total_earnings); ?></td>
                                 <td class="fer-value" data-value="<?php echo $item->net_profit; ?>"><?php echo fer_format_currency($item->net_profit); ?></td>
-                                <td class="fer-value" data-value="<?php echo $item->roi_percentage; ?>"><?php echo number_format($item->roi_percentage, 1); ?>%</td>
+                                <td class="fer-value" data-value="<?php echo $item->roi_percentage; ?>"><?php echo number_format($item->roi_percentage ?? 0, 1); ?>%</td>
                                 <td><?php echo $item->rental_count; ?></td>
                             </tr>
                         <?php endforeach; ?>
@@ -106,7 +105,7 @@ $timespan_label = $year === 'all' ? 'All Time' : intval($year);
                                 <td><?php echo fer_format_currency($item->purchase_price); ?></td>
                                 <td class="fer-value" data-value="<?php echo $item->total_earnings; ?>"><?php echo fer_format_currency($item->total_earnings); ?></td>
                                 <td class="fer-value" data-value="<?php echo $item->net_profit; ?>"><?php echo fer_format_currency($item->net_profit); ?></td>
-                                <td class="fer-value" data-value="<?php echo $item->roi_percentage; ?>"><?php echo number_format($item->roi_percentage, 1); ?>%</td>
+                                <td class="fer-value" data-value="<?php echo $item->roi_percentage; ?>"><?php echo number_format($item->roi_percentage ?? 0, 1); ?>%</td>
                                 <td><?php echo $item->rental_count; ?></td>
                             </tr>
                         <?php endforeach; ?>
@@ -169,18 +168,20 @@ document.addEventListener('DOMContentLoaded', function() {
         labels: ferAjax.monthlyTrend.map(item => item.month),
         datasets: [
             {
-                label: 'Revenue',
+                label: 'Rental Income',
                 data: ferAjax.monthlyTrend.map(item => item.revenue),
                 backgroundColor: 'rgba(0, 255, 0, 0.5)',
                 borderColor: 'green',
-                borderWidth: 1
+                borderWidth: 2,
+                type: 'bar'
             },
             {
                 label: 'Purchase Expense',
                 data: ferAjax.purchaseData.map(item => ({ x: item.date, y: item.price })),
                 backgroundColor: 'rgba(255, 0, 0, 0.5)',
                 borderColor: 'red',
-                borderWidth: 1
+                borderWidth: 2,
+                type: 'bar'
             }
         ]
     };

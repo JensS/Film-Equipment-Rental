@@ -91,7 +91,7 @@ $clients = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}film_clients ORDER B
                                         <select name="equipment[]" class="equipment-select" required>
                                             <option value="">Select Equipment</option>
                                             <?php foreach (fer_get_categories() as $slug => $category): ?>
-                                                <optgroup label="<?php echo esc_attr($category); ?>">
+                                                <optgroup label="<?php echo esc_attr($category["name"]); ?>">
                                                     <?php 
                                                     $category_items = array_filter($items, function($equip) use ($slug) {
                                                         return $equip->category === $slug;
