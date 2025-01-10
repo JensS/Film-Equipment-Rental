@@ -1,4 +1,4 @@
-# Film Equipment Rental Plugin
+# Film Equipment Rental Wordpress Plugin
 
 ## Purpose
 
