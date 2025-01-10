@@ -64,7 +64,7 @@
 }
 /* Hover effect */
 #equipment-table tbody tr:hover {
-    background-color: #f8f9fa;
+    background-color: unset;
 }
 
 /* Empty date handling */
@@ -316,5 +316,16 @@
     box-sizing: border-box;
     padding: 5px;
     font-size: 14px;
+}
+
+/* Equipment table specific styles */
+#equipment-table tbody tr:nth-child(4n+1),
+#equipment-table tbody tr:nth-child(4n+2) {
+    background-color: #fff;
+}
+
+#equipment-table tbody tr:nth-child(4n+3),
+#equipment-table tbody tr:nth-child(4n+4) {
+    background-color: #f6f7f7;
 }
 

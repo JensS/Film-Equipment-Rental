@@ -10,7 +10,24 @@ add_shortcode('equipment_list', 'fer_equipment_list_shortcode');
 
 function fer_get_categories() {
     $saved_categories = get_option('fer_categories', array());
-    return !empty($saved_categories) ? $saved_categories : FER_DEFAULT_CATEGORIES;
+    
+    // Check if saved_categories is a string (old format) or invalid
+    if (!is_array($saved_categories) || empty($saved_categories)) {
+        // Delete the invalid option and return defaults
+        delete_option('fer_categories');
+        return FER_DEFAULT_CATEGORIES;
+    }
+    
+    // Validate structure of each category
+    foreach ($saved_categories as $slug => $category) {
+        if (!is_array($category) || !isset($category['name']) || !isset($category['icon'])) {
+            // If any category is invalid, return defaults
+            delete_option('fer_categories');
+            return FER_DEFAULT_CATEGORIES;
+        }
+    }
+    
+    return $saved_categories;
 }
 
 function fer_register_settings() {
@@ -292,3 +309,72 @@ function fer_render_equipment_item($item, $categories) {
     </div>
     <?php
 }
+
+function fer_handle_import_gear() {
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Insufficient permissions');
+        return;
+    }
+
+    if (!check_ajax_referer('fer_nonce', 'nonce', false)) {
+        wp_send_json_error('Invalid nonce');
+        return;
+    }
+
+    if (!isset($_FILES['file'])) {
+        wp_send_json_error('No file uploaded');
+        return;
+    }
+
+    $file_content = file_get_contents($_FILES['file']['tmp_name']);
+    $items = json_decode($file_content, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        wp_send_json_error('Invalid JSON file');
+        return;
+    }
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'film_equipment';
+    $imported = 0;
+
+    foreach ($items as $item) {
+        // Remove ID to avoid conflicts
+        unset($item['id']);
+        
+        // Ensure all required fields are present
+        $required_fields = ['name', 'category', 'daily_rate'];
+        foreach ($required_fields as $field) {
+            if (!isset($item[$field])) {
+                continue 2; // Skip this item if missing required fields
+            }
+        }
+
+        // Insert the record
+        $result = $wpdb->insert(
+            $table_name,
+            $item,
+            [
+                '%s', // name
+                '%s', // brand
+                '%s', // serial_number
+                '%s', // short_description
+                '%s', // description
+                '%s', // category
+                '%f', // daily_rate
+                '%f', // purchase_price
+                '%s', // purchase_date
+                '%f', // current_value
+                '%s', // image_url
+                '%s'  // status
+            ]
+        );
+
+        if ($result) {
+            $imported++;
+        }
+    }
+
+    wp_send_json_success("Successfully imported $imported items");
+}
+add_action('wp_ajax_fer_import_gear', 'fer_handle_import_gear');

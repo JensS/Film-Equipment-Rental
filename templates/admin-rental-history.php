@@ -61,7 +61,10 @@ $sessions = $wpdb->get_results("
                         <td><?php echo $session->package_deal ? 'Yes' : 'No'; ?></td>
                         <td>
                             <a href="<?php echo admin_url('admin.php?page=add-rental&edit=' . $session->id); ?>" 
-                            class="button button-small">Edit</a>
+                               class="button button-small" title="Edit">✏️</a>
+                            <button class="button button-small delete-rental" 
+                                    data-id="<?php echo $session->id; ?>" 
+                                    title="Delete">🗑️</button>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -105,7 +108,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('import-rentals-btn').addEventListener('click', function() {
-        document.getElementById('import-rentals').click();
+        if (confirm('Warning: Importing rental history will replace all existing rental entries. Are you sure you want to continue?')) {
+            document.getElementById('import-rentals').click();
+        }
     });
 
     document.getElementById('import-rentals').addEventListener('change', function(event) {
@@ -127,6 +132,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+    });
+
+    // Add delete rental functionality
+    document.querySelectorAll('.delete-rental').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            if (confirm('Are you sure you want to delete this rental entry? This cannot be undone.')) {
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        action: 'fer_delete_rental',
+                        nonce: '<?php echo wp_create_nonce('fer_nonce'); ?>',
+                        id: id
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.closest('tr').remove();
+                    } else {
+                        alert('Error deleting rental: ' + data.data);
+                    }
+                });
+            }
+        });
     });
 });
 </script>

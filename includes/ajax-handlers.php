@@ -226,12 +226,64 @@ add_action('wp_ajax_fer_export_gear', 'fer_export_gear');
 
 function fer_import_data($data, $table) {
     global $wpdb;
+    
+    // Sanitize table name to prevent SQL injection
+    $table = esc_sql($table);
+    
+    // Get table columns
+    $columns = $wpdb->get_col("DESC {$table}");
+    
     foreach ($data as $item) {
-        $existing_item = $wpdb->get_row($wpdb->prepare("SELECT id FROM $table WHERE id = %d", $item['id']));
-        if ($existing_item) {
-            $item['id'] = null; // Remove ID to allow auto-increment
+        // Convert all values to appropriate format
+        foreach ($item as $key => $value) {
+            // Skip if column doesn't exist
+            if (!in_array($key, $columns)) {
+                continue;
+            }
+            
+            // Handle null values
+            if ($value === null) {
+                $item[$key] = null;
+                continue;
+            }
+            
+            // Handle different column types
+            switch ($key) {
+                case 'rental_date':
+                case 'purchase_date':
+                case 'created_at':
+                    $item[$key] = sanitize_text_field($value);
+                    break;
+                    
+                case 'rental_days':
+                case 'id':
+                case 'session_id':
+                case 'equipment_id':
+                case 'client_id':
+                    $item[$key] = intval($value);
+                    break;
+                    
+                case 'package_amount':
+                case 'earnings':
+                    $item[$key] = floatval($value);
+                    break;
+                    
+                default:
+                    $item[$key] = sanitize_text_field($value);
+            }
         }
-        $wpdb->replace($table, $item);
+
+        // Remove id for insert to avoid conflicts
+        $id = isset($item['id']) ? $item['id'] : null;
+        unset($item['id']);
+        
+        // Try to insert first
+        $result = $wpdb->insert($table, $item);
+        
+        // If insert fails, try update
+        if ($result === false && $id) {
+            $wpdb->update($table, $item, ['id' => $id]);
+        }
     }
 }
 
@@ -275,16 +327,96 @@ function fer_import_rentals() {
     }
 
     $file = $_FILES['file']['tmp_name'];
-    $data = json_decode(file_get_contents($file), true);
+    $content = file_get_contents($file);
+    $data = json_decode($content, true);
 
     if (json_last_error() !== JSON_ERROR_NONE) {
-        wp_send_json_error('Invalid JSON file');
+        wp_send_json_error('Invalid JSON file: ' . json_last_error_msg());
         return;
     }
 
-    fer_import_data($data['sessions'], $wpdb->prefix . 'rental_sessions');
-    fer_import_data($data['earnings'], $wpdb->prefix . 'equipment_earnings');
-    wp_send_json_success();
+    global $wpdb;
+    
+    try {
+        // Start transaction
+        $wpdb->query('START TRANSACTION');
+
+        if (!isset($data['sessions']) || !isset($data['earnings'])) {
+            throw new Exception('Invalid data structure');
+        }
+
+        // Clear existing data
+        $wpdb->query("DELETE FROM {$wpdb->prefix}equipment_earnings");
+        $wpdb->query("DELETE FROM {$wpdb->prefix}rental_sessions");
+        
+        // Reset auto-increment
+        $wpdb->query("ALTER TABLE {$wpdb->prefix}rental_sessions AUTO_INCREMENT = 1");
+        $wpdb->query("ALTER TABLE {$wpdb->prefix}equipment_earnings AUTO_INCREMENT = 1");
+
+        // Get existing client IDs
+        $existing_clients = $wpdb->get_col("SELECT id FROM {$wpdb->prefix}film_clients");
+
+        // Import sessions
+        foreach ($data['sessions'] as $session) {
+            // Check if client_id exists in the clients table, if not, set to null
+            if (!empty($session['client_id']) && !in_array($session['client_id'], $existing_clients)) {
+                $session['client_id'] = null;
+            }
+
+            $wpdb->insert(
+                $wpdb->prefix . 'rental_sessions',
+                array(
+                    'id' => $session['id'],
+                    'rental_date' => $session['rental_date'],
+                    'rental_days' => intval($session['rental_days']),
+                    'notes' => $session['notes'],
+                    'package_deal' => $session['package_deal'],
+                    'package_amount' => floatval($session['package_amount']),
+                    'client_id' => $session['client_id'],
+                    'created_at' => isset($session['created_at']) ? $session['created_at'] : current_time('mysql')
+                ),
+                array('%d', '%s', '%d', '%s', '%s', '%f', '%d', '%s')
+            );
+            
+            if ($wpdb->last_error) {
+                throw new Exception('Error importing session: ' . $wpdb->last_error);
+            }
+        }
+
+        // Get existing equipment IDs
+        $existing_equipment = $wpdb->get_col("SELECT id FROM {$wpdb->prefix}film_equipment");
+
+        // Import earnings, skip any with non-existent equipment IDs
+        foreach ($data['earnings'] as $earning) {
+            if (!in_array($earning['equipment_id'], $existing_equipment)) {
+                continue; // Skip this earning if equipment doesn't exist
+            }
+
+            $wpdb->insert(
+                $wpdb->prefix . 'equipment_earnings',
+                array(
+                    'id' => $earning['id'],
+                    'session_id' => intval($earning['session_id']),
+                    'equipment_id' => intval($earning['equipment_id']),
+                    'earnings' => floatval($earning['earnings'])
+                ),
+                array('%d', '%d', '%d', '%f')
+            );
+            
+            if ($wpdb->last_error) {
+                throw new Exception('Error importing earning: ' . $wpdb->last_error);
+            }
+        }
+
+        // Commit transaction
+        $wpdb->query('COMMIT');
+        
+        wp_send_json_success('Import completed successfully');
+    } catch (Exception $e) {
+        // Rollback on error
+        $wpdb->query('ROLLBACK');
+        wp_send_json_error('Import failed: ' . $e->getMessage());
+    }
 }
 add_action('wp_ajax_fer_import_rentals', 'fer_import_rentals');
 
@@ -522,3 +654,40 @@ function fer_update_equipment_field() {
     }
 }
 add_action('wp_ajax_fer_update_equipment_field', 'fer_update_equipment_field');
+
+function fer_delete_rental() {
+    check_ajax_referer('fer_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Permission denied');
+        return;
+    }
+
+    global $wpdb;
+    $rental_table = $wpdb->prefix . 'rental_sessions';
+    $earnings_table = $wpdb->prefix . 'equipment_earnings';
+    
+    $id = intval($_POST['id']);
+    
+    try {
+        $wpdb->query('START TRANSACTION');
+        
+        // Delete associated earnings first (due to foreign key constraint)
+        $wpdb->delete($earnings_table, array('session_id' => $id));
+        
+        // Then delete the rental session
+        $result = $wpdb->delete($rental_table, array('id' => $id));
+        
+        if ($result === false) {
+            throw new Exception($wpdb->last_error);
+        }
+        
+        $wpdb->query('COMMIT');
+        wp_send_json_success();
+        
+    } catch (Exception $e) {
+        $wpdb->query('ROLLBACK');
+        wp_send_json_error('Error deleting rental: ' . $e->getMessage());
+    }
+}
+add_action('wp_ajax_fer_delete_rental', 'fer_delete_rental');

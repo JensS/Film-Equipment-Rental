@@ -61,6 +61,15 @@ function fer_activate_plugin() {
         update_option('fer_brands', FER_DEFAULT_BRANDS);
     }
     
+    // Migrate categories if they exist in old format
+    $existing_categories = get_option('fer_categories');
+    if ($existing_categories && !is_array($existing_categories)) {
+        // Delete old format
+        delete_option('fer_categories');
+        // Set new format
+        update_option('fer_categories', FER_DEFAULT_CATEGORIES);
+    }
+    
     fer_debug_log('Plugin activation completed');
 }
 
