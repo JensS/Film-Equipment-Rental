@@ -26,6 +26,10 @@ jQuery(document).ready(function($) {
             }
         });
 
+        if ($('#package_deal').val() === 'yes') {
+            actualTotal = parseFloat($('#package_amount').val()) || 0;
+        }
+
         const discount = standardTotal > 0 ? 
             ((standardTotal - actualTotal) / standardTotal * 100) : 0;
 
@@ -101,31 +105,27 @@ jQuery(document).ready(function($) {
         }
     });
 
-    // Form submission handler
-    $('#fer-rental-form').submit(function(e) {
-        e.preventDefault();
-        
-        $.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'fer_save_rental',
-                data: $(this).serialize(),
-                nonce: $('#rental_nonce').val()
-            },
-            success: function(response) {
-                if (response.success) {
-                    window.location.href = 'admin.php?page=rental-history&message=added';
-                } else {
-                    alert('Error saving rental: ' + response.data);
-                }
-            }
-        });
+    // Remove duplicate functionality
+    const packageDealSelect = $('#package_deal');
+    const packageAmountRow = $('#package_amount_row');
+    const packageAmountInput = $('#package_amount');
+
+    packageDealSelect.on('change', function() {
+        if (this.value === 'yes') {
+            packageAmountRow.show();
+            calculateTotals();
+        } else {
+            packageAmountRow.hide();
+            packageAmountInput.val('');
+            calculateTotals();
+        }
     });
 
-    // Initialize on page load
+    $('#package_amount').on('input', function() {
+        calculateTotals();
+    });
+
+    // Initialize
     updateEquipmentSelects();
     calculateTotals();
-
-    
 });

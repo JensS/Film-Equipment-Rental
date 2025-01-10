@@ -23,23 +23,24 @@ $sessions = $wpdb->get_results("
 ?>
 
 <div class="wrap">
-    <h1>Rental History</h1>
+    <h1 class="wp-heading-inline">Rental History</h1>
+    <a href="<?php echo admin_url('admin.php?page=add-rental'); ?>" class="page-title-action" style="top:0">Add Rental Income</a>
+    <button id="export-rentals" class="button">Export Rentals</button>
+    <input type="file" id="import-rentals" style="display:none;" />
+    <button id="import-rentals-btn" class="button">Import Rentals</button>
     
     <div class="fer-rental-history">
-        <button id="export-rentals" class="button">Export Rentals</button>
-        <input type="file" id="import-rentals" style="display:none;" />
-        <button id="import-rentals-btn" class="button">Import Rentals</button>
         <table class="wp-list-table widefat fixed striped" id="rental-history-table">
             <thead>
                 <tr>
-                    <th data-sort="rental_date">Date</th>
-                    <th data-sort="rental_days">Days</th>
-                    <th data-sort="equipment_names">Equipment</th>
-                    <th data-sort="standard_total">Standard Total</th>
-                    <th data-sort="total_earnings">Actual Income</th>
-                    <th data-sort="total_discount">Discount</th>
-                    <th data-sort="notes">Notes</th>
-                    <th data-sort="package_deal">Package Deal</th>
+                    <th data-sort="rental_date" style="text-align:right">Date</th>
+                    <th data-sort="rental_days" style="width:3%;text-align:right">Days</th>
+                    <th data-sort="equipment_names" style="width:15%">Equipment</th>
+                    <th data-sort="standard_total" style="text-align:right">Standard Total</th>
+                    <th data-sort="total_earnings" style="text-align:right">Actual Income</th>
+                    <th data-sort="total_discount" style="text-align:right">Discount</th>
+                    <th data-sort="notes" style="">Notes</th>
+                    <th data-sort="package_deal" style="">Package Deal</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -50,12 +51,12 @@ $sessions = $wpdb->get_results("
                         : 0;
                     ?>
                     <tr>
-                        <td><?php echo esc_html($session->rental_date); ?></td>
-                        <td><?php echo esc_html($session->rental_days); ?></td>
-                        <td><?php echo esc_html($session->equipment_names); ?></td>
-                        <td><?php echo fer_format_currency($session->standard_total); ?></td>
-                        <td><?php echo fer_format_currency($session->total_earnings); ?></td>
-                        <td><?php echo number_format($discount_percentage, 1); ?>%</td>
+                        <td class="date" style="text-align:right"><?php echo esc_html(fer_format_date($session->rental_date)); ?></td>
+                        <td class="number" style="text-align:right"><?php echo esc_html($session->rental_days); ?></td>
+                        <td class="small"><?php echo esc_html($session->equipment_names); ?></td>
+                        <td class="number" style="text-align:right"><?php echo fer_format_currency($session->standard_total); ?></td>
+                        <td class="number" style="text-align:right"><?php echo fer_format_currency($session->total_earnings); ?></td>
+                        <td class="number" style="text-align:right"><?php echo number_format($discount_percentage, 1); ?>%</td>
                         <td><?php echo esc_html($session->notes); ?></td>
                         <td><?php echo $session->package_deal ? 'Yes' : 'No'; ?></td>
                         <td>

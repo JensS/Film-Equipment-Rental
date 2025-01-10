@@ -5,39 +5,95 @@ jQuery(document).ready(function($) {
         desc.slideToggle();
         $(this).text(desc.is(':visible') ? 'Show Less' : 'Show Details');
     });
-});
 
-document.getElementById('fer-search-input').addEventListener('input', function() {
-    var searchQuery = this.value.toLowerCase();
-    var items = document.querySelectorAll('.fer-item');
-    items.forEach(function(item) {
-        var itemName = item.querySelector('h3').textContent.toLowerCase();
-        if (itemName.includes(searchQuery)) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
+    $('#fer-search-input').on('input', function() {
+        var searchQuery = $(this).val().toLowerCase();
+        $('.fer-item').each(function() {
+            var itemNameElement = $(this).find('h4');
+            if (itemNameElement.length) {
+                var itemName = itemNameElement.text().toLowerCase();
+                if (itemName.includes(searchQuery)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            }
+        });
+    });
+
+    $('#fer-download-pdf').click(function() {
+        var rentalDays = $('#fer-rental-days').val();
+        if (!rentalDays || rentalDays < 1) {
+            alert('Please enter a valid number of days.');
+            return;
+        }
+
+        var items = [];
+        $('.fer-item:visible').each(function() {
+            var imgSrc = $(this).find('img').attr('src') || '';
+            var nameElement = $(this).find('h4');
+            var priceElement = $(this).find('.fer-daily-rate');
+            if (nameElement.length && priceElement.length) {
+                items.push({
+                    imgSrc: imgSrc,
+                    name: nameElement.text(),
+                    price: priceElement.text()
+                });
+            }
+        });
+
+        if (items.length === 0) {
+            alert('No items found to generate PDF.');
+            return;
+        }
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', fer_ajax.ajax_url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('X-WP-Nonce', fer_ajax.nonce);
+        xhr.responseType = 'blob';
+
+        xhr.onload = function() {
+            if (this.status === 200) {
+                var blob = new Blob([this.response], { type: 'application/pdf' });
+                var url = window.URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'rental-overview.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } else {
+                console.error('Error generating PDF:', this.status);
+                alert('Error generating PDF. Please try again.');
+            }
+        };
+
+        xhr.send(JSON.stringify({
+            action: 'fer_generate_pdf',
+            data: { items: items, rentalDays: rentalDays }
+        }));
+    });
+
+    // Lightbox functionality
+    var lightbox = $('#fer-lightbox');
+    var lightboxImg = $('#fer-lightbox-img');
+    var lightboxClose = $('.fer-lightbox-close');
+
+    $('.fer-lightbox-trigger').click(function() {
+        lightbox.show();
+        lightboxImg.attr('src', $(this).attr('src'));
+    });
+
+    lightboxClose.click(function() {
+        lightbox.hide();
+    });
+
+    lightbox.click(function(e) {
+        if (e.target === this) {
+            lightbox.hide();
         }
     });
-});
 
-// Lightbox functionality
-var lightbox = document.getElementById('fer-lightbox');
-var lightboxImg = document.getElementById('fer-lightbox-img');
-var lightboxClose = document.querySelector('.fer-lightbox-close');
-
-document.querySelectorAll('.fer-lightbox-trigger').forEach(function(img) {
-    img.addEventListener('click', function() {
-        lightbox.style.display = 'block';
-        lightboxImg.src = this.src;
-    });
-});
-
-lightboxClose.addEventListener('click', function() {
-    lightbox.style.display = 'none';
-});
-
-lightbox.addEventListener('click', function(e) {
-    if (e.target === lightbox) {
-        lightbox.style.display = 'none';
-    }
 });

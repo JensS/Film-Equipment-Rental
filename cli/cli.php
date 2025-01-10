@@ -11,7 +11,6 @@ if (!defined('WP_DEBUG') || !WP_DEBUG) {
 
 global $wpdb;
 
-
 function reset_plugin_tables() {
     global $wpdb;
 
@@ -36,18 +35,14 @@ function reset_plugin_tables() {
     WP_CLI::success('Plugin tables have been reset.');
 }
 
-function import_sql_file($file_path) {
-    global $wpdb;
+function import_json_file($file_path, $table) {
+    $data = json_decode(file_get_contents($file_path), true);
 
-    $sql = file_get_contents($file_path);
-    $queries = explode(';', $sql);
-
-    foreach ($queries as $query) {
-        if (trim($query)) {
-            $wpdb->query($query);
-        }
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        WP_CLI::error('Invalid JSON file');
     }
 
+    fer_import_data($data, $table);
     WP_CLI::success("Data from $file_path has been imported.");
 }
 
@@ -56,8 +51,34 @@ WP_CLI::add_command('fer_reset', function() {
     reset_plugin_tables();
 });
 
-WP_CLI::add_command('fer_example_data', function() {
-    import_sql_file(plugin_dir_path(__FILE__) . '../sql_dumps/wp_film_equipment.sql');
-    import_sql_file(plugin_dir_path(__FILE__) . '../sql_dumps/wp_earnings.sql');
-    WP_CLI::success('Example data have been imported.');
+WP_CLI::add_command('fer_import_gear', function($args, $assoc_args) {
+    $file_path = $args[0] ?? null;
+    if (!$file_path || !file_exists($file_path)) {
+        WP_CLI::error('Please provide a valid JSON file path.');
+    }
+    import_json_file($file_path, $wpdb->prefix . 'film_equipment');
+});
+
+WP_CLI::add_command('fer_import_rentals', function($args, $assoc_args) {
+    $file_path = $args[0] ?? null;
+    if (!$file_path || !file_exists($file_path)) {
+        WP_CLI::error('Please provide a valid JSON file path.');
+    }
+    $data = json_decode(file_get_contents($file_path), true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        WP_CLI::error('Invalid JSON file');
+    }
+
+    fer_import_data($data['sessions'], $wpdb->prefix . 'rental_sessions');
+    fer_import_data($data['earnings'], $wpdb->prefix . 'equipment_earnings');
+    WP_CLI::success("Rental data from $file_path has been imported.");
+});
+
+WP_CLI::add_command('fer_import_clients', function($args, $assoc_args) {
+    $file_path = $args[0] ?? null;
+    if (!$file_path || !file_exists($file_path)) {
+        WP_CLI::error('Please provide a valid JSON file path.');
+    }
+    import_json_file($file_path, $wpdb->prefix . 'film_clients');
 });

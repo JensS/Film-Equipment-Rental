@@ -1,184 +1,249 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Shelf Structure -->
+  <!-- Main Shelf Structure -->
   <path d="
-    M15 15
-    h70
-    v70
-    h-70
+    M10 10
+    h80
+    v80
+    h-80
     Z" fill="#1a1a1a"/>
     
   <!-- Shelf Verticals -->
   <path d="
-    M15 15
+    M10 10
     h4
-    v70
+    v80
     h-4
     Z
-    M48 15
+    M48 10
     h4
-    v70
+    v80
     h-4
     Z
-    M81 15
+    M86 10
     h4
-    v70
+    v80
     h-4
     Z" fill="#333333"/>
     
   <!-- Shelf Horizontals -->
   <path d="
-    M15 15
-    h70
+    M10 10
+    h80
     v3
-    h-70
+    h-80
     Z
-    M15 35
-    h70
+    M10 32
+    h80
     v3
-    h-70
+    h-80
     Z
-    M15 55
-    h70
+    M10 54
+    h80
     v3
-    h-70
+    h-80
     Z
-    M15 82
-    h70
+    M10 87
+    h80
     v3
-    h-70
+    h-80
     Z" fill="#333333"/>
-    
-  <!-- Equipment Items -->
-  <!-- Cases -->
+
+  <!-- Camera Bodies (Top Shelf) -->
   <path d="
-    M20 20
-    h25
-    v12
-    h-25
-    Z" fill="#666666"/>
-    
-  <path d="
-    M55 20
+    M15 15
     h20
     v12
     h-20
     Z" fill="#666666"/>
-    
-  <!-- Lights -->
+  <!-- Camera Details -->
   <path d="
-    M22 40
-    h10
-    l2 2 
+    M30 17
+    h3
     v8
-    l-2 2
-    h-10
-    Z" fill="#666666"/>
-    
+    h-3
+    Z
+    M18 18
+    h8
+    v6
+    h-8
+    Z" fill="#999999"/>
+
+  <!-- Cinema Lenses -->
   <path d="
-    M37 40
-    h10
+    M55 15
+    h8
     l2 2
     v8
     l-2 2
-    h-10
+    h-8
     Z" fill="#666666"/>
-    
-  <!-- Tripods -->
   <path d="
-    M55 38
-    h4
-    v15
-    h-4
+    M67 15
+    h8
+    l2 2
+    v8
+    l-2 2
+    h-8
     Z" fill="#666666"/>
-    
+  <!-- Lens Rings -->
   <path d="
-    M65 38
-    h4
-    v15
-    h-4
-    Z" fill="#666666"/>
-    
-  <path d="
-    M75 38
-    h4
-    v15
-    h-4
-    Z" fill="#666666"/>
-    
-  <!-- Small Items/Boxes -->
-  <path d="
-    M20 60
-    h20
-    v10
-    h-20
-    Z
-    M20 73
-    h20
-    v7
-    h-20
-    Z" fill="#666666"/>
-    
-  <!-- Labels/Details -->
-  <path d="
-    M22 62
-    h16
-    v2
-    h-16
-    Z
-    M22 75
-    h16
-    v2
-    h-16
-    Z" fill="#999999"/>
-    
-  <!-- Equipment Details -->
-  <path d="
-    M57 42
+    M57 17
     h2
-    v7
+    v8
     h-2
     Z
-    M67 42
+    M69 17
     h2
-    v7
-    h-2
-    Z
-    M77 42
-    h2
-    v7
+    v8
     h-2
     Z" fill="#999999"/>
-    
-  <!-- Case Details -->
+
+  <!-- HMI Lights (Middle Shelf) -->
   <path d="
-    M23 23
-    h19
-    v2
-    h-19
-    Z
-    M58 23
-    h14
-    v2
-    h-14
+    M15 37
+    h15
+    l3 3
+    v8
+    l-3 3
+    h-15
+    Z" fill="#666666"/>
+  <!-- Light Details -->
+  <path d="
+    M18 40
+    h9
+    v4
+    h-9
     Z" fill="#999999"/>
-    
-  <!-- Additional Storage Boxes -->
+
+  <!-- LED Panels -->
   <path d="
-    M55 60
+    M55 37
     h25
-    v20
+    v12
     h-25
     Z" fill="#666666"/>
-    
+  <!-- LED Pattern -->
   <path d="
-    M58 65
+    M58 40
+    h2
+    v2
+    h-2
+    Z
+    M63 40
+    h2
+    v2
+    h-2
+    Z
+    M68 40
+    h2
+    v2
+    h-2
+    Z
+    M73 40
+    h2
+    v2
+    h-2
+    Z
+    M58 44
+    h2
+    v2
+    h-2
+    Z
+    M63 44
+    h2
+    v2
+    h-2
+    Z
+    M68 44
+    h2
+    v2
+    h-2
+    Z
+    M73 44
+    h2
+    v2
+    h-2
+    Z" fill="#999999"/>
+
+  <!-- Light Stands -->
+  <path d="
+    M15 59
+    l3 -2
+    h4
+    l3 2
+    v22
+    h-10
+    Z" fill="#666666"/>
+  <path d="
+    M28 59
+    l3 -2
+    h4
+    l3 2
+    v22
+    h-10
+    Z" fill="#666666"/>
+  <!-- Stand Details -->
+  <path d="
+    M17 65
+    h6
+    v2
+    h-6
+    Z
+    M30 65
+    h6
+    v2
+    h-6
+    Z" fill="#999999"/>
+
+  <!-- Accessories (Bottom Right) -->
+  <!-- Memory Cards -->
+  <path d="
+    M55 59
+    h10
+    v8
+    h-10
+    Z
+    M68 59
+    h10
+    v8
+    h-10
+    Z" fill="#666666"/>
+  <!-- Card Details -->
+  <path d="
+    M57 63
+    h6
+    v2
+    h-6
+    Z
+    M70 63
+    h6
+    v2
+    h-6
+    Z" fill="#999999"/>
+
+  <!-- Filter Cases -->
+  <path d="
+    M55 70
+    h25
+    v15
+    h-25
+    Z" fill="#666666"/>
+  <!-- Filter Case Details -->
+  <path d="
+    M58 73
     h19
     v2
     h-19
     Z
-    M58 70
+    M58 77
+    h19
+    v2
+    h-19
+    Z
+    M58 81
     h19
     v2
     h-19
     Z" fill="#999999"/>
+
 </svg>

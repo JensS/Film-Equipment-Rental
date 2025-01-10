@@ -1,76 +1,96 @@
 # Film Equipment Rental Plugin
 
-![Film Equipment Rental Plugin Logo](./logo.svg)
-<img src="./logo.svg">
+## Purpose
 
-This is a WordPress plugin that has two main functionalities:
-1. Organize your gear (storing items including their serial number, purchase date, price, etc.)
-2. Track your rental income on this gear and see ROI
+A WordPress plugin for filmmakers to track ROI on their equipment rentals. Created to solve the common issue of not knowing whether gear investments are actually profitable, helping to make more informed purchasing decisions.
 
-## Frontend
+## Key Features
 
-The frontend of the plugin allows users to view and search for available equipment. It includes the following features:
+### Equipment Management
+- Track gear details (purchase price, current value, daily rate)
+- Organize by categories and brands
+- Quick inline editing with double-click
+- Bulk actions (duplicate, delete)
+- Import/Export as JSON
+- Serial number tracking
+- Image management
 
-- **Search Bar**: Users can search for equipment by name and filter by rental days.
-- **Equipment List**: Displays a list of available equipment, organized by categories if enabled.
-- **Lightbox**: Clicking on an equipment image opens a lightbox with a larger view of the image.
-- **Rental Overview PDF**: Users can generate a PDF overview of the rental equipment.
+### Rental Tracking
+- Track rental sessions and earnings
+- Package deal support
+- Client management
+- Individual item vs package pricing
+- Automatic discount calculation
+- PDF rental sheet generation
 
-### Shortcode
+### Financial Analysis
+- ROI tracking per item
+- Revenue statistics
+- Most/least profitable items
+- Monthly trends
+- Client revenue tracking
+- Purchase value vs rental income
 
-To display the equipment list on any page or post, use the following shortcode:
+### Frontend Display
+- Public equipment catalog via shortcode `[equipment_list]`
+- Searchable/filterable interface
+- Category grouping
+- Technical specs formatting
+- Lightbox image viewing
+- Optional pagination
 
-```sh
-[equipment_list]
-```
+## Installation
 
-## Backend
+1. Upload to `/wp-content/plugins/`
+2. Activate through WordPress plugins menu
+3. Configure settings under "Equipment Rental"
 
-The backend of the plugin provides an admin interface for managing equipment, clients, and rental sessions. It includes the following features:
+## Settings
 
-- **Equipment Management**: Add, edit, and delete equipment items.
-- **Client Management**: Add, edit, and delete clients.
-- **Rental Sessions**: Track rental sessions and earnings for each piece of equipment.
-- **Statistics**: View detailed statistics on equipment performance, revenue, and ROI.
-- **Import/Export**: Import and export equipment, clients, and rental data in JSON format.
+### General
+- Currency (symbol and position)
+- Date format
+- Items per page
+- Category grouping
+- Pagination
+- Similar items grouping
 
-## CLI Tool
+### Data Management
+- Import/Export equipment data
+- Import/Export rental history
+- Import/Export client data
+- Reset database (CLI)
 
-This plugin includes a CLI tool for debugging and managing the plugin's data. The CLI tool provides the following commands:
+## CLI Commands
 
-### Reset Plugin Tables
-
-You can reset all plugin tables using the `fer_reset` command. This will drop all existing tables and recreate them.
-
-```sh
+```bash
+# Reset plugin data
 wp fer_reset
-```
 
-You will be prompted to confirm the reset action. This is useful for debugging and starting with a clean slate.
-
-### Import Example Data
-
-You can import example data into the plugin tables using the `fer_example_data` command. This will import data from predefined SQL files.
-
-```sh
+# Import sample data
 wp fer_example_data
+
+# Import from JSON
+wp fer_import_gear /path/to/gear.json
+wp fer_import_rentals /path/to/rentals.json
+wp fer_import_clients /path/to/clients.json
 ```
 
-This command is useful for debugging and testing the plugin with sample data.
+## Technical Specifications
 
-### Usage
+Equipment descriptions support two formats:
 
-1. Ensure that WP-CLI is installed and configured on your WordPress site.
-2. Run the desired command from the command line.
+```
+# Space-separated
+Focal Length 16mm Maximum Aperture T2.8
 
-**Note:** Debug mode must be enabled to use these commands. You can enable debug mode by adding the following line to your `wp-config.php` file:
-
-```php
-define('WP_DEBUG', true);
+# Colon-separated
+Focal Length: 16mm
+Maximum Aperture: T2.8
 ```
 
-## About the Creator
+## About
 
-This plugin was created by Jens Sage, a fellow filmmaker who understands the struggle of Gear Acquisition Syndrome (GAS) all too well. Jens built this tool to help manage and track his collection of film equipment. You can find more about Jens at [www.jenssage.com](https://www.jenssage.com) or follow him on Instagram at [instagram.com/jenssage.de](https://instagram.com/jenssage.de).
+Created by Jens Sage ([www.jenssage.com](https://www.jenssage.com)) to help filmmakers make better gear investment decisions.
 
 

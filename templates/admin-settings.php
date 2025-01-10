@@ -16,10 +16,11 @@ if (!defined('ABSPATH')) exit;
                 $date_format = get_option('fer_date_format', 'Y-m-d');
                 $items_per_page = get_option('fer_items_per_page', 12);
                 $enable_categories = get_option('fer_enable_categories', '1');
-                $default_image = get_option('fer_default_image', "");
                 $categories = get_option('fer_categories', FER_DEFAULT_CATEGORIES);
                 $brands = fer_get_brands();
                 sort($brands);
+                $enable_pagination = get_option('fer_enable_pagination', '0');
+                $enable_grouping = get_option('fer_enable_grouping', '0');
 
                 // Ensure categories is an array
                 if (!is_array($categories)) {
@@ -62,14 +63,6 @@ if (!defined('ABSPATH')) exit;
                         </td>
                     </tr>
                     <tr>
-                        <th><label for="items_per_page">Items Per Page</label></th>
-                        <td>
-                            <input type="number" id="items_per_page" name="fer_items_per_page" 
-                                   value="<?php echo esc_attr($items_per_page); ?>" min="1" max="100">
-                            <p class="description">Number of items to display per category on the public page</p>
-                        </td>
-                    </tr>
-                    <tr>
                         <th>Categories</th>
                         <td>
                             <label>
@@ -81,17 +74,31 @@ if (!defined('ABSPATH')) exit;
                     </tr>
 
                     <tr>
-                        <th><label for="default_image">Default Image URL</label></th>
+                        <th>Pagination</th>
                         <td>
-                            <input type="url" id="default_image" name="fer_default_image" 
-                                value="<?php echo esc_url($default_image); ?>" class="regular-text">
-                            <button type="button" class="button media-button" id="upload-default-image">Choose Image</button>
-                            <p class="description">Default image for equipment without a specific image</p>
-                            <div id="default-image-preview">
-                                <?php if ($default_image): ?>
-                                    <img src="<?php echo esc_url($default_image); ?>" style="max-width: 200px; margin-top: 10px;">
-                                <?php endif; ?>
-                            </div>
+                            <label>
+                                <input type="checkbox" name="fer_enable_pagination" value="1" 
+                                       <?php checked($enable_pagination, '1'); ?>>
+                                Enable pagination on public page
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="items_per_page">Items Per Page</label></th>
+                        <td>
+                            <input type="number" id="items_per_page" name="fer_items_per_page" 
+                                   value="<?php echo esc_attr($items_per_page); ?>" min="1" max="100">
+                            <p class="description">Number of items to display per page on the public page</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Group Similar Items</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="fer_enable_grouping" value="1" 
+                                       <?php checked($enable_grouping, '1'); ?>>
+                                Group items with the same title and daily price
+                            </label>
                         </td>
                     </tr>
                 </table>

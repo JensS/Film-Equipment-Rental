@@ -59,24 +59,34 @@ $timespan_label = $year === 'all' ? 'All Time' : intval($year);
                     <thead>
                         <tr>
                             <th data-sort="name">Equipment</th>
-                            <th data-sort="purchase_price">Purchase Price</th>
-                            <th data-sort="total_earnings">Total Income</th>
-                            <th data-sort="net_profit">Net Profit</th>
-                            <th data-sort="roi_percentage">ROI</th>
-                            <th data-sort="rental_count">Rentals</th>
+                            <th data-sort="purchase_price" style="text-align:right">Purchase Price</th>
+                            <th data-sort="total_earnings" style="text-align:right">Total Income</th>
+                            <th data-sort="net_profit" style="text-align:right">Net Profit</th>
+                            <th data-sort="roi_percentage" style="text-align:right">ROI</th>
+                            <th data-sort="rental_count" style="text-align:right">Rentals</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php 
-                        $top_items = array_slice($stats['equipment'], 0, 10);
+                        // Filter equipment before slicing top 10 lists
+                        $filtered_equipment = array_filter($stats['equipment'], function($item) {
+                            return $item->purchase_price !== null && (float) $item->purchase_price > 0;
+                        });
+
+                        // Sort by ROI descending for top items
+                        usort($filtered_equipment, function($a, $b) {
+                            return $b->roi_percentage <=> $a->roi_percentage;
+                        });
+                        $top_items = array_slice($filtered_equipment, 0, 10);
+
                         foreach ($top_items as $item): ?>
                             <tr>
                                 <td><?php echo esc_html($item->name); ?></td>
-                                <td><?php echo fer_format_currency($item->purchase_price); ?></td>
-                                <td class="fer-value" data-value="<?php echo $item->total_earnings; ?>"><?php echo fer_format_currency($item->total_earnings); ?></td>
-                                <td class="fer-value" data-value="<?php echo $item->net_profit; ?>"><?php echo fer_format_currency($item->net_profit); ?></td>
-                                <td class="fer-value" data-value="<?php echo $item->roi_percentage; ?>"><?php echo number_format($item->roi_percentage ?? 0, 1); ?>%</td>
-                                <td><?php echo $item->rental_count; ?></td>
+                                <td class="number" style="text-align:right;"><?php echo fer_format_currency($item->purchase_price); ?></td>
+                                <td class="fer-value number" style="text-align:right;"  data-value="<?php echo $item->total_earnings; ?>"><?php echo fer_format_currency($item->total_earnings); ?></td>
+                                <td class="fer-valu number" style="text-align:right;" data-value="<?php echo $item->net_profit; ?>"><?php echo fer_format_currency($item->net_profit); ?></td>
+                                <td class="fer-value number" style="text-align:right;" data-value="<?php echo $item->roi_percentage; ?>"><?php echo number_format($item->roi_percentage ?? 0, 1); ?>%</td>
+                                <td class="number" style="text-align:right;"><?php echo $item->rental_count; ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -89,24 +99,30 @@ $timespan_label = $year === 'all' ? 'All Time' : intval($year);
                     <thead>
                         <tr>
                             <th data-sort="name">Equipment</th>
-                            <th data-sort="purchase_price">Purchase Price</th>
-                            <th data-sort="total_earnings">Total Income</th>
-                            <th data-sort="net_profit">Net Profit</th>
-                            <th data-sort="roi_percentage">ROI</th>
-                            <th data-sort="rental_count">Rentals</th>
+                            <th data-sort="purchase_price" style="text-align:right">Purchase Price</th>
+                            <th data-sort="total_earnings" style="text-align:right">Total Income</th>
+                            <th data-sort="net_profit" style="text-align:right">Net Profit</th>
+                            <th data-sort="roi_percentage" style="text-align:right">ROI</th>
+                            <th data-sort="rental_count" style="text-align:right">Rentals</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php 
-                        $least_profitable_items = array_slice(array_reverse($stats['equipment']), 0, 10);
+                        // Sort by ROI ascending for least profitable items
+                        $filtered_least_prof = $filtered_equipment;
+                        usort($filtered_least_prof, function($a, $b) {
+                            return $a->roi_percentage <=> $b->roi_percentage;
+                        });
+                        $least_profitable_items = array_slice($filtered_least_prof, 0, 10);
+
                         foreach ($least_profitable_items as $item): ?>
                             <tr>
                                 <td><?php echo esc_html($item->name); ?></td>
-                                <td><?php echo fer_format_currency($item->purchase_price); ?></td>
-                                <td class="fer-value" data-value="<?php echo $item->total_earnings; ?>"><?php echo fer_format_currency($item->total_earnings); ?></td>
-                                <td class="fer-value" data-value="<?php echo $item->net_profit; ?>"><?php echo fer_format_currency($item->net_profit); ?></td>
-                                <td class="fer-value" data-value="<?php echo $item->roi_percentage; ?>"><?php echo number_format($item->roi_percentage ?? 0, 1); ?>%</td>
-                                <td><?php echo $item->rental_count; ?></td>
+                                <td class="number" style="text-align:right;"><?php echo fer_format_currency($item->purchase_price); ?></td>
+                                <td class="fer-value number" style="text-align:right;" data-value="<?php echo $item->total_earnings; ?>"><?php echo fer_format_currency($item->total_earnings); ?></td>
+                                <td class="fer-value number" style="text-align:right;" data-value="<?php echo $item->net_profit; ?>"><?php echo fer_format_currency($item->net_profit); ?></td>
+                                <td class="fer-value number" style="text-align:right;" data-value="<?php echo $item->roi_percentage; ?>"><?php echo number_format($item->roi_percentage ?? 0, 1); ?>%</td>
+                                <td class="number" style="text-align:right;"><?php echo $item->rental_count; ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -119,16 +135,16 @@ $timespan_label = $year === 'all' ? 'All Time' : intval($year);
                     <thead>
                         <tr>
                             <th data-sort="name">Client</th>
-                            <th data-sort="rental_count">Number of Rentals</th>
-                            <th data-sort="total_revenue">Total Revenue</th>
+                            <th data-sort="rental_count" style="text-align:right">Number of Rentals</th>
+                            <th data-sort="total_revenue" style="text-align:right">Total Revenue</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($stats['top_clients'] as $client): ?>
                             <tr>
                                 <td><?php echo esc_html($client->name); ?></td>
-                                <td><?php echo $client->rental_count; ?></td>
-                                <td class="fer-value" data-value="<?php echo $client->total_revenue; ?>"><?php echo fer_format_currency($client->total_revenue); ?></td>
+                                <td class="number" style="text-align:right;"><?php echo $client->rental_count; ?></td>
+                                <td class="fer-value number" style="text-align:right;" data-value="<?php echo $client->total_revenue; ?>"><?php echo fer_format_currency($client->total_revenue); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -162,14 +178,24 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Chart.js setup
+    const selectedYear = '<?php echo esc_js($year); ?>';
+    let monthlyTrend = ferAjax.monthlyTrend;
+    let purchaseData = ferAjax.purchaseData;
+
+    if (selectedYear !== 'all') {
+        monthlyTrend = monthlyTrend.filter(item => item.month.startsWith(selectedYear));
+        purchaseData = purchaseData.filter(
+            item => item.date && item.date.substring(0, 4) === selectedYear
+        );
+    }
+
     const ctx = document.getElementById('fer-chart-canvas').getContext('2d');
     const chartData = {
-        labels: ferAjax.monthlyTrend.map(item => item.month),
+        labels: monthlyTrend.map(item => item.month),
         datasets: [
             {
                 label: 'Rental Income',
-                data: ferAjax.monthlyTrend.map(item => item.revenue),
+                data: monthlyTrend.map(item => item.revenue),
                 backgroundColor: 'rgba(0, 255, 0, 0.5)',
                 borderColor: 'green',
                 borderWidth: 2,
@@ -177,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             {
                 label: 'Purchase Expense',
-                data: ferAjax.purchaseData.map(item => ({ x: item.date, y: item.price })),
+                data: purchaseData.map(item => ({ x: item.date, y: item.price })),
                 backgroundColor: 'rgba(255, 0, 0, 0.5)',
                 borderColor: 'red',
                 borderWidth: 2,

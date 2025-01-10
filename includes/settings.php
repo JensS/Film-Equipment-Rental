@@ -54,18 +54,6 @@ function fer_sanitize_categories($categories) {
     return $sanitized_categories;
 }
 
-function fer_register_settings() {
-    register_setting('fer_options', 'fer_currency', 'sanitize_text_field');
-    register_setting('fer_options', 'fer_currency_position', 'sanitize_text_field');
-    register_setting('fer_options', 'fer_date_format', 'sanitize_text_field');
-    register_setting('fer_options', 'fer_items_per_page', 'intval');
-    register_setting('fer_options', 'fer_enable_categories', 'intval');
-    register_setting('fer_options', 'fer_default_image', 'esc_url_raw');
-    register_setting('fer_options', 'fer_categories', 'fer_sanitize_categories');
-    register_setting('fer_options', 'fer_brands', 'fer_sanitize_brands');
-}
-
-add_action('admin_init', 'fer_register_settings');
 
 function fer_sanitize_brands($brands) {
     $brands_array = explode("\n", $brands);

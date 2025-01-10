@@ -39,9 +39,10 @@ $clients = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}film_clients ORDER B
     <h1><?php echo $edit_id ? 'Edit Rental Income' : 'Add Rental Income'; ?></h1>
 
     <div class="fer-add-rental-form">
-        <form id="fer-rental-form" method="post">
+        <form id="fer-rental-form" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <?php wp_nonce_field('fer_rental_nonce', 'rental_nonce'); ?>
-            <input type="hidden" name="session_id" value="<?php echo $edit_id; ?>">
+            <input type="hidden" name="action" value="save_rental">
+            <input type="hidden" name="session_id" value="<?php echo esc_attr($edit_id); ?>">
             
             <table class="form-table">
                 <tr>
@@ -119,7 +120,7 @@ $clients = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}film_clients ORDER B
                                     <select name="equipment[]" class="equipment-select" required>
                                         <option value="">Select Equipment</option>
                                         <?php foreach (fer_get_categories() as $slug => $category): ?>
-                                            <optgroup label="<?php echo esc_attr($category); ?>">
+                                            <optgroup label="<?php echo esc_attr($category["name"]); ?>">
                                                 <?php 
                                                 $category_items = array_filter($items, function($item) use ($slug) {
                                                     return $item->category === $slug;
@@ -180,77 +181,9 @@ $clients = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}film_clients ORDER B
 
             <p class="submit">
                 <input type="submit" class="button button-primary" 
-                       value="<?php echo $edit_id ? 'Update Rental' : 'Save Rental'; ?>">
+                       value="<?php echo $edit_id ? 'Update Rental' : 'Add Rental'; ?>">
             </p>
         </form>
     </div>
     <?php fer_output_footer(); ?>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const packageDealSelect = document.getElementById('package_deal');
-    const packageAmountRow = document.getElementById('package_amount_row');
-    const packageAmountInput = document.getElementById('package_amount');
-    const rentalItemsContainer = document.getElementById('rental-items');
-    const standardTotalElement = document.getElementById('standard-total');
-    const actualTotalElement = document.getElementById('actual-total');
-    const totalDiscountElement = document.getElementById('total-discount');
-    const rentalDaysInput = document.getElementById('rental_days');
-
-    packageDealSelect.addEventListener('change', function() {
-        if (this.value === 'yes') {
-            packageAmountRow.style.display = '';
-        } else {
-            packageAmountRow.style.display = 'none';
-            packageAmountInput.value = '';
-            updateSummary();
-        }
-    });
-
-    rentalItemsContainer.addEventListener('input', updateSummary);
-    packageAmountInput.addEventListener('input', updateSummary);
-    rentalDaysInput.addEventListener('input', updateSummary);
-
-    function updateSummary() {
-        const rentalItems = rentalItemsContainer.querySelectorAll('.rental-item');
-        const rentalDays = parseInt(rentalDaysInput.value) || 1;
-        let standardTotal = 0;
-        let actualTotal = 0;
-
-        rentalItems.forEach(item => {
-            const equipmentSelect = item.querySelector('.equipment-select');
-            const earningsInput = item.querySelector('input[name="earnings[]"]');
-            const dailyRate = parseFloat(equipmentSelect.selectedOptions[0].getAttribute('data-rate')) || 0;
-
-            if (packageDealSelect.value === 'no') {
-                earningsInput.value = (dailyRate * rentalDays).toFixed(2);
-            }
-
-            const earnings = parseFloat(earningsInput.value) || 0;
-
-            standardTotal += dailyRate * rentalDays;
-            actualTotal += earnings;
-        });
-
-        if (packageDealSelect.value === 'yes' && packageAmountInput.value) {
-            actualTotal = parseFloat(packageAmountInput.value);
-            const rebate = (standardTotal - actualTotal) / standardTotal;
-            rentalItems.forEach(item => {
-                const equipmentSelect = item.querySelector('.equipment-select');
-                const earningsInput = item.querySelector('input[name="earnings[]"]');
-                const dailyRate = parseFloat(equipmentSelect.selectedOptions[0].getAttribute('data-rate')) || 0;
-                earningsInput.value = (dailyRate * rentalDays * (1 - rebate)).toFixed(2);
-            });
-        }
-
-        const discountPercentage = standardTotal > 0 ? ((standardTotal - actualTotal) / standardTotal) * 100 : 0;
-
-        standardTotalElement.textContent = `€${standardTotal.toFixed(2)}`;
-        actualTotalElement.textContent = `€${actualTotal.toFixed(2)}`;
-        totalDiscountElement.textContent = `${discountPercentage.toFixed(2)}%`;
-    }
-
-    updateSummary();
-});
-</script>

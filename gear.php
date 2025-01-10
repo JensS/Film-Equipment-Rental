@@ -22,8 +22,8 @@ define('FER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FER_DEFAULT_BRANDS', array(
     'Angénieux', 'Apple', 'ARRI', 'Aputure', 'Avenger', 'Bebob', 'Blackmagic', 'Canon', 'Carl Zeiss', 'Cooke', 
     'DJI', 'DZOFilm', 'Focusbug', 'Leica', 'Manfrotto', 'Matthews', 'OConnor', 'Panasonic', 'Peli Case', 
-    'Preston', 'RED', 'Røde', 'Sachtler', 'SanDisk', 'Schneider', 'Sennheiser', 'Sigma', 'SmallRig', 
-    'smallHD', 'Sony', 'Tentacle', 'Teradek', 'Tiffen', 'Tilta', 'Zoom', 'beyerdynamic'
+    'Preston', "Proaim", 'RED', 'Røde', 'Sachtler', 'SanDisk', 'Schneider', 'Sennheiser', 'Sigma', "Samyang", 'SmallRig', 
+    'smallHD', 'Sony', 'Tentacle', 'Teradek', 'Tiffen', 'Tilta', 'Zoom', 'beyerdynamic', 'Panavision', 'OConnor'
 ));
 
 
@@ -36,7 +36,6 @@ require_once FER_PLUGIN_DIR . 'includes/default-categories.php';
 require_once FER_PLUGIN_DIR . 'includes/functions.php';
 require_once FER_PLUGIN_DIR . 'includes/ajax-handlers.php';
 require_once FER_PLUGIN_DIR . 'includes/admin-menu.php';
-require_once FER_PLUGIN_DIR . 'includes/shortcodes.php';
 require_once FER_PLUGIN_DIR . 'includes/enqueue-scripts.php';
 require_once FER_PLUGIN_DIR . 'includes/settings.php';
 if ( defined( 'WP_CLI' ) && WP_CLI ) {

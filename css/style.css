@@ -1,3 +1,97 @@
+/* Header button alignment */
+.wp-heading-inline {
+    display: inline-block;
+    margin-right: 10px;
+    vertical-align: middle;
+    margin-bottom: 15px;
+}
+
+.page-title-action,
+#export-gear,
+#import-gear-btn {
+    position: relative;
+    top: -3px;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+#equipment-table {
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+}
+
+#equipment-table thead th {
+    background: #f8f9fa;
+    padding: 12px;
+    font-weight: 600;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+    color: #495057;
+}
+
+#equipment-table td {
+    padding: 12px;
+    vertical-align: middle;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Image column */
+#equipment-table td:first-child {
+    width: 120px;
+    height: 100px;
+    padding: 10px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#equipment-table td:first-child img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Column-specific styling */
+.number {
+    text-align: right;
+    font-family: monospace;
+}
+
+.small,.widefat td.small {
+    font-size:10px;
+}
+/* Hover effect */
+#equipment-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Empty date handling */
+#equipment-table td:nth-child(7):empty::after,
+#equipment-table td:nth-child(7):contains("0000-00-00")::after {
+    content: "—";
+    color: #6c757d;
+}
+
+#equipment-table .fer-placeholder {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+#equipment-table .fer-placeholder svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    margin: 0 auto;
+    transform: scale(0.6);
+    transform-origin: center;
+}
+
 /* General form styling */
 .fer-add-rental-form,
 .fer-equipment-form {
@@ -131,10 +225,6 @@
 .fer-admin-footer a:hover {
     color: #135e96;
 }
-#equipment-table .fer_placeholder svg {
-    width: 60px;
-    height: 60px;
-}
 /* Form elements */
 .fer-add-rental-form input[type="text"],
 .fer-add-rental-form input[type="number"],
@@ -218,5 +308,13 @@
 
 #add-category {
     margin-bottom: 10px;
+}
+
+/* Inline editing input */
+.inline-edit {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px;
+    font-size: 14px;
 }
 

@@ -82,11 +82,12 @@ function fer_delete_equipment() {
 add_action('wp_ajax_fer_delete_equipment', 'fer_delete_equipment');
 
 function fer_save_rental_session() {
-    check_ajax_referer('fer_session_nonce', 'session_nonce');
+    if (!isset($_POST['rental_nonce']) || !wp_verify_nonce($_POST['rental_nonce'], 'fer_rental_nonce')) {
+        wp_die('Security check failed');
+    }
     
     if (!current_user_can('manage_options')) {
-        wp_send_json_error('Permission denied');
-        return;
+        wp_die('Permission denied');
     }
     
     global $wpdb;
@@ -94,41 +95,58 @@ function fer_save_rental_session() {
     try {
         $wpdb->query('START TRANSACTION');
         
-        // Insert session
+        $session_id = isset($_POST['session_id']) ? intval($_POST['session_id']) : 0;
         $session_data = array(
             'rental_date' => sanitize_text_field($_POST['rental_date']),
             'rental_days' => intval($_POST['rental_days']),
-            'notes' => sanitize_textarea_field($_POST['notes'])
+            'notes' => sanitize_textarea_field($_POST['notes']),
+            'client_id' => !empty($_POST['client_id']) ? intval($_POST['client_id']) : null,
+            'package_deal' => sanitize_text_field($_POST['package_deal']),
+            'package_amount' => !empty($_POST['package_amount']) ? floatval($_POST['package_amount']) : null
         );
+
+        fer_debug_log('Saving rental session with data:', $session_data);
         
-        $wpdb->insert($wpdb->prefix . 'rental_sessions', $session_data);
-        $session_id = $wpdb->insert_id;
+        if ($session_id > 0) {
+            $wpdb->update($wpdb->prefix . 'rental_sessions', $session_data, array('id' => $session_id));
+        } else {
+            $wpdb->insert($wpdb->prefix . 'rental_sessions', $session_data);
+            $session_id = $wpdb->insert_id;
+        }
+        
+        // Clear existing earnings for this session if it's an update
+        if ($session_id > 0) {
+            $wpdb->delete($wpdb->prefix . 'equipment_earnings', array('session_id' => $session_id));
+        }
         
         // Insert earnings
-        $equipment_ids = $_POST['equipment'];
-        $earnings = $_POST['earnings'];
-        
-        foreach ($equipment_ids as $index => $equipment_id) {
-            if (empty($equipment_id)) continue;
-            
-            $earning_data = array(
-                'session_id' => $session_id,
-                'equipment_id' => intval($equipment_id),
-                'earnings' => floatval($earnings[$index])
-            );
-            
-            $wpdb->insert($wpdb->prefix . 'equipment_earnings', $earning_data);
+        if (isset($_POST['equipment']) && is_array($_POST['equipment'])) {
+            foreach ($_POST['equipment'] as $index => $equipment_id) {
+                if (empty($equipment_id)) continue;
+                
+                $wpdb->insert(
+                    $wpdb->prefix . 'equipment_earnings',
+                    array(
+                        'session_id' => $session_id,
+                        'equipment_id' => intval($equipment_id),
+                        'earnings' => floatval($_POST['earnings'][$index])
+                    )
+                );
+            }
         }
         
         $wpdb->query('COMMIT');
-        wp_send_json_success(array('session_id' => $session_id));
+        
+        wp_safe_redirect(admin_url('admin.php?page=rental-history&updated=true'));
+        exit;
         
     } catch (Exception $e) {
         $wpdb->query('ROLLBACK');
-        wp_send_json_error('Error: ' . $e->getMessage());
+        fer_debug_log('Error saving rental:', $e->getMessage());
+        wp_die('Error: ' . $e->getMessage());
     }
 }
-add_action('wp_ajax_fer_save_rental_session', 'fer_save_rental_session');
+add_action('admin_post_save_rental', 'fer_save_rental_session');
 
 function fer_save_client() {
     check_ajax_referer('fer_nonce', 'nonce');
@@ -206,6 +224,17 @@ function fer_export_gear() {
 }
 add_action('wp_ajax_fer_export_gear', 'fer_export_gear');
 
+function fer_import_data($data, $table) {
+    global $wpdb;
+    foreach ($data as $item) {
+        $existing_item = $wpdb->get_row($wpdb->prepare("SELECT id FROM $table WHERE id = %d", $item['id']));
+        if ($existing_item) {
+            $item['id'] = null; // Remove ID to allow auto-increment
+        }
+        $wpdb->replace($table, $item);
+    }
+}
+
 function fer_import_gear() {
     check_ajax_referer('fer_nonce', 'nonce');
 
@@ -227,40 +256,10 @@ function fer_import_gear() {
         return;
     }
 
-    global $wpdb;
-    $table = $wpdb->prefix . 'film_equipment';
-
-    foreach ($data as $item) {
-        $existing_item = $wpdb->get_row($wpdb->prepare("SELECT id FROM $table WHERE id = %d", $item['id']));
-        if ($existing_item) {
-            $item['id'] = null; // Remove ID to allow auto-increment
-        }
-        $wpdb->replace($table, $item);
-    }
-
+    fer_import_data($data, $wpdb->prefix . 'film_equipment');
     wp_send_json_success();
 }
 add_action('wp_ajax_fer_import_gear', 'fer_import_gear');
-
-function fer_export_rentals() {
-    if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'fer_nonce')) {
-        error_log('Nonce verification failed for export rentals');
-        echo '-1';
-        exit;
-    }
-
-    global $wpdb;
-    $sessions_table = $wpdb->prefix . 'rental_sessions';
-    $earnings_table = $wpdb->prefix . 'equipment_earnings';
-    $sessions = $wpdb->get_results("SELECT * FROM $sessions_table", ARRAY_A);
-    $earnings = $wpdb->get_results("SELECT * FROM $earnings_table", ARRAY_A);
-
-    header('Content-Type: application/json');
-    header('Content-Disposition: attachment; filename="rentals.json"');
-    echo json_encode(array('sessions' => $sessions, 'earnings' => $earnings));
-    exit;
-}
-add_action('wp_ajax_fer_export_rentals', 'fer_export_rentals');
 
 function fer_import_rentals() {
     check_ajax_referer('fer_nonce', 'nonce');
@@ -283,47 +282,11 @@ function fer_import_rentals() {
         return;
     }
 
-    global $wpdb;
-    $sessions_table = $wpdb->prefix . 'rental_sessions';
-    $earnings_table = $wpdb->prefix . 'equipment_earnings';
-
-    foreach ($data['sessions'] as $session) {
-        $existing_session = $wpdb->get_row($wpdb->prepare("SELECT id FROM $sessions_table WHERE id = %d", $session['id']));
-        if ($existing_session) {
-            $session['id'] = null; // Remove ID to allow auto-increment
-        }
-        $wpdb->replace($sessions_table, $session);
-    }
-
-    foreach ($data['earnings'] as $earning) {
-        $existing_earning = $wpdb->get_row($wpdb->prepare("SELECT id FROM $earnings_table WHERE id = %d", $earning['id']));
-        if ($existing_earning) {
-            $earning['id'] = null; // Remove ID to allow auto-increment
-        }
-        $wpdb->replace($earnings_table, $earning);
-    }
-
+    fer_import_data($data['sessions'], $wpdb->prefix . 'rental_sessions');
+    fer_import_data($data['earnings'], $wpdb->prefix . 'equipment_earnings');
     wp_send_json_success();
 }
 add_action('wp_ajax_fer_import_rentals', 'fer_import_rentals');
-
-function fer_export_clients() {
-    if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'fer_nonce')) {
-        error_log('Nonce verification failed for export clients');
-        echo '-1';
-        exit;
-    }
-
-    global $wpdb;
-    $table = $wpdb->prefix . 'film_clients';
-    $clients = $wpdb->get_results("SELECT * FROM $table", ARRAY_A);
-
-    header('Content-Type: application/json');
-    header('Content-Disposition: attachment; filename="clients.json"');
-    echo json_encode($clients);
-    exit;
-}
-add_action('wp_ajax_fer_export_clients', 'fer_export_clients');
 
 function fer_import_clients() {
     check_ajax_referer('fer_nonce', 'nonce');
@@ -346,32 +309,75 @@ function fer_import_clients() {
         return;
     }
 
-    global $wpdb;
-    $table = $wpdb->prefix . 'film_clients';
-
-    foreach ($data as $client) {
-        $existing_client = $wpdb->get_row($wpdb->prepare("SELECT id FROM $table WHERE id = %d", $client['id']));
-        if ($existing_client) {
-            $client['id'] = null; // Remove ID to allow auto-increment
-        }
-        $wpdb->replace($table, $client);
-    }
-
+    fer_import_data($data, $wpdb->prefix . 'film_clients');
     wp_send_json_success();
 }
 add_action('wp_ajax_fer_import_clients', 'fer_import_clients');
 
+function fer_export_rentals() {
+    if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'fer_nonce')) {
+        error_log('Nonce verification failed for export rentals');
+        echo '-1';
+        exit;
+    }
+
+    global $wpdb;
+    $sessions_table = $wpdb->prefix . 'rental_sessions';
+    $earnings_table = $wpdb->prefix . 'equipment_earnings';
+    $sessions = $wpdb->get_results("SELECT * FROM $sessions_table", ARRAY_A);
+    $earnings = $wpdb->get_results("SELECT * FROM $earnings_table", ARRAY_A);
+
+    header('Content-Type: application/json');
+    header('Content-Disposition: attachment; filename="rentals.json"');
+    echo json_encode(array('sessions' => $sessions, 'earnings' => $earnings));
+    exit;
+}
+add_action('wp_ajax_fer_export_rentals', 'fer_export_rentals');
+
+function fer_export_clients() {
+    if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'fer_nonce')) {
+        error_log('Nonce verification failed for export clients');
+        echo '-1';
+        exit;
+    }
+
+    global $wpdb;
+    $table = $wpdb->prefix . 'film_clients';
+    $clients = $wpdb->get_results("SELECT * FROM $table", ARRAY_A);
+
+    header('Content-Type: application/json');
+    header('Content-Disposition: attachment; filename="clients.json"');
+    echo json_encode($clients);
+    exit;
+}
+add_action('wp_ajax_fer_export_clients', 'fer_export_clients');
+
 use Dompdf\Dompdf;
 
 function fer_generate_pdf() {
-    if (!isset($_POST['data'])) {
+    // Get the raw input
+    $json_str = file_get_contents('php://input');
+    $json_data = json_decode($json_str, true);
+
+    if (!isset($json_data['action']) || $json_data['action'] !== 'fer_generate_pdf') {
+        wp_send_json_error('Invalid action');
+        return;
+    }
+
+    // Verify nonce from headers
+    $nonce = isset($_SERVER['HTTP_X_WP_NONCE']) ? $_SERVER['HTTP_X_WP_NONCE'] : '';
+    if (!wp_verify_nonce($nonce, 'fer_nonce')) {
+        wp_send_json_error('Invalid nonce');
+        return;
+    }
+
+    if (!isset($json_data['data'])) {
         wp_send_json_error('No data provided');
         return;
     }
 
-    $data = json_decode(file_get_contents('php://input'), true);
-    $items = $data['items'];
-    $rentalDays = intval($data['rentalDays']);
+    $items = $json_data['data']['items'];
+    $rentalDays = intval($json_data['data']['rentalDays']);
 
     ob_start();
     ?>
@@ -379,8 +385,9 @@ function fer_generate_pdf() {
     <head>
         <style>
             table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 8px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f2f2f2; }
+            img { max-width: 100px; height: auto; }
         </style>
     </head>
     <body>
@@ -389,19 +396,31 @@ function fer_generate_pdf() {
         <table>
             <thead>
                 <tr>
-                    <th>Thumbnail</th>
+                    <th>Image</th>
                     <th>Equipment Name</th>
-                    <th>Price per Day</th>
+                    <th>Daily Rate</th>
+                    <th>Total (<?php echo $rentalDays; ?> days)</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($items as $item): ?>
+                <?php 
+                $total = 0;
+                foreach ($items as $item): 
+                    $daily_rate = floatval(preg_replace('/[^0-9.]/', '', $item['price']));
+                    $item_total = $daily_rate * $rentalDays;
+                    $total += $item_total;
+                ?>
                     <tr>
-                        <td><img src="<?php echo esc_url($item['imgSrc']); ?>" width="50"></td>
+                        <td><?php if (!empty($item['imgSrc'])): ?><img src="<?php echo esc_url($item['imgSrc']); ?>"><?php endif; ?></td>
                         <td><?php echo esc_html($item['name']); ?></td>
                         <td><?php echo esc_html($item['price']); ?></td>
+                        <td><?php echo number_format($item_total, 2); ?> €</td>
                     </tr>
                 <?php endforeach; ?>
+                <tr>
+                    <td colspan="3" style="text-align: right;"><strong>Total:</strong></td>
+                    <td><strong><?php echo number_format($total, 2); ?> €</strong></td>
+                </tr>
             </tbody>
         </table>
     </body>
@@ -409,13 +428,97 @@ function fer_generate_pdf() {
     <?php
     $html = ob_get_clean();
 
-    require_once(plugin_dir_path(__FILE__) . 'vendor/autoload.php');
+    require_once(plugin_dir_path(__FILE__) . '../vendor/autoload.php');
     $dompdf = new Dompdf();
     $dompdf->loadHtml($html);
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
-    $dompdf->stream('rental-overview.pdf', array('Attachment' => 0));
-    exit;
+
+    // Return PDF as binary data
+    header('Content-Type: application/pdf');
+    echo $dompdf->output();
+    wp_die();
 }
 add_action('wp_ajax_fer_generate_pdf', 'fer_generate_pdf');
 add_action('wp_ajax_nopriv_fer_generate_pdf', 'fer_generate_pdf');
+
+function fer_duplicate_equipment() {
+    check_ajax_referer('fer_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Permission denied');
+        return;
+    }
+
+    if (!isset($_POST['id'])) {
+        wp_send_json_error('No equipment ID provided');
+        return;
+    }
+
+    global $wpdb;
+    $table = $wpdb->prefix . 'film_equipment';
+    $id = intval($_POST['id']);
+
+    // Get the original equipment data
+    $original = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $id), ARRAY_A);
+
+    if (!$original) {
+        wp_send_json_error('Equipment not found');
+        return;
+    }
+
+    // Remove the ID to allow auto-increment
+    unset($original['id']);
+
+    // Insert the duplicated equipment
+    $result = $wpdb->insert($table, $original);
+    if ($result === false) {
+        wp_send_json_error('Database error: ' . $wpdb->last_error);
+    } else {
+        wp_send_json_success(array(
+            'message' => 'Equipment duplicated successfully',
+            'id' => $wpdb->insert_id
+        ));
+    }
+}
+add_action('wp_ajax_fer_duplicate_equipment', 'fer_duplicate_equipment');
+
+function fer_update_equipment_field() {
+    check_ajax_referer('fer_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Permission denied');
+        return;
+    }
+
+    if (!isset($_POST['id'], $_POST['field'], $_POST['value'])) {
+        wp_send_json_error('Invalid request');
+        return;
+    }
+
+    global $wpdb;
+    $table = $wpdb->prefix . 'film_equipment';
+    $id = intval($_POST['id']);
+    $field = sanitize_text_field($_POST['field']);
+    $value = sanitize_text_field($_POST['value']);
+
+    $allowed_fields = ['name', 'daily_rate', 'purchase_price', 'short_description', 'current_value', 'serial_number'];
+    if (!in_array($field, $allowed_fields)) {
+        wp_send_json_error('Invalid field');
+        return;
+    }
+
+    if ($field === 'daily_rate' || $field === 'purchase_price' || $field === 'current_value') {
+        $value = floatval($value);
+    }
+
+    $data = [$field => $value];
+    $result = $wpdb->update($table, $data, ['id' => $id]);
+
+    if ($result === false) {
+        wp_send_json_error('Database error: ' . $wpdb->last_error);
+    } else {
+        wp_send_json_success('Field updated successfully');
+    }
+}
+add_action('wp_ajax_fer_update_equipment_field', 'fer_update_equipment_field');
