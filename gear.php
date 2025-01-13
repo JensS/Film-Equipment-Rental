@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 
 register_activation_hook(__FILE__, 'fer_activate_plugin');
 
-// Define constants
+define('FER_SLUG', "film-equipment-rental");
 define('FER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FER_DEFAULT_BRANDS', array(
     'Angénieux', 'Apple', 'ARRI', 'Aputure', 'Avenger', 'Bebob', 'Blackmagic', 'Canon', 'Carl Zeiss', 'Cooke', 
@@ -48,14 +48,13 @@ use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 $myUpdateChecker = PucFactory::buildUpdateChecker(
 	'https://github.com/JensS/Film-Equipment-Rental/',
 	__FILE__,
-	'film-equipment-rental'
+	FER_SLUG
 );
 
 // @todo Set the branch that contains the stable release. 
-$myUpdateChecker->setBranch('stable-branch-name');
+$myUpdateChecker->setBranch('stable');
+$myUpdateChecker->getVcsApi()->enableReleaseAssets();
 
-// @todo Optional: If you're using a private repository, specify the access token like this:
-$myUpdateChecker->setAuthentication('your-token-here');
 
 // Activation hook
 function fer_activate_plugin() {

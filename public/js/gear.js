@@ -1,5 +1,6 @@
 jQuery(document).ready(function($) {
-    $('.fer-show-more').click(function() {
+    // Use event delegation to handle click event
+    $(document).on('click', '.fer-show-more', function() {
         var itemId = $(this).data('item');
         var desc = $('#desc-' + itemId);
         desc.slideToggle();
@@ -81,7 +82,7 @@ jQuery(document).ready(function($) {
     var lightboxImg = $('#fer-lightbox-img');
     var lightboxClose = $('.fer-lightbox-close');
 
-    $('.fer-lightbox-trigger').click(function() {
+    $(document).on('click', '.fer-lightbox-trigger', function() {
         lightbox.show();
         lightboxImg.attr('src', $(this).attr('src'));
     });

@@ -41,11 +41,11 @@ $categories = fer_get_categories();
             <tr>
                 <th><a href="<?php echo add_query_arg(['page' => $current_page, 'sort_by' => 'image', 'sort_order' => ($sort_by === 'image' && $sort_order === 'ASC' ? 'desc' : 'asc')]); ?>">Image</a></th>
                 <th style="width:20%">
-                    <a href="<?php echo add_query_arg(['page' => $current_page, 'sort_by' => 'brand', 'sort_order' => ($sort_by === 'brand' && $sort_order === 'ASC' ? 'desc' : 'asc')]); ?>">Brand</a> / 
+                    <a href="<?php echo add_query_arg(['page' => $current_page, 'sort_by' => 'brand', 'sort_order' => ($sort_by === 'brand' && $sort_order === 'ASC' ? 'desc' : 'asc')]); ?>">Brand</a> <br/>
                     <a href="<?php echo add_query_arg(['page' => $current_page, 'sort_by' => 'name', 'sort_order' => ($sort_by === 'name' && $sort_order === 'ASC' ? 'desc' : 'asc')]); ?>">Name</a>
                 </th>
                 <th style="width:20%">
-                    <a href="<?php echo add_query_arg(['page' => $current_page, 'sort_by' => 'category', 'sort_order' => ($sort_by === 'category' && $sort_order === 'ASC' ? 'desc' : 'asc')]); ?>">Category</a> / 
+                    <a href="<?php echo add_query_arg(['page' => $current_page, 'sort_by' => 'category', 'sort_order' => ($sort_by === 'category' && $sort_order === 'ASC' ? 'desc' : 'asc')]); ?>">Category</a> <br/>
                     <a href="<?php echo add_query_arg(['page' => $current_page, 'sort_by' => 'short_description', 'sort_order' => ($sort_by === 'short_description' && $sort_order === 'ASC' ? 'desc' : 'asc')]); ?>">Description</a>
                 </th>
                 <th style="text-align:right;"><a href="<?php echo add_query_arg(['page' => $current_page, 'sort_by' => 'daily_rate', 'sort_order' => ($sort_by === 'daily_rate' && $sort_order === 'ASC' ? 'desc' : 'asc')]); ?>">Daily Rate</a></th>
