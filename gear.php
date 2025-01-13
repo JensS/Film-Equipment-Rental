@@ -41,6 +41,22 @@ require_once FER_PLUGIN_DIR . 'includes/settings.php';
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
     require_once FER_PLUGIN_DIR . 'cli/cli.php';
 }
+
+require "vendor/autoload.php";
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+$myUpdateChecker = PucFactory::buildUpdateChecker(
+	'https://github.com/JensS/Film-Equipment-Rental/',
+	__FILE__,
+	'film-equipment-rental'
+);
+
+// @todo Set the branch that contains the stable release. 
+$myUpdateChecker->setBranch('stable-branch-name');
+
+// @todo Optional: If you're using a private repository, specify the access token like this:
+$myUpdateChecker->setAuthentication('your-token-here');
+
 // Activation hook
 function fer_activate_plugin() {
     fer_debug_log('Plugin activation started');
