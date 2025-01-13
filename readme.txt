@@ -26,9 +26,10 @@ Film Equipment Rental is a WordPress plugin that helps you manage your film equi
 
 == Installation ==
 
-1. Upload the plugin files to `/wp-content/plugins/gear`
-2. Activate the plugin through the 'Plugins' screen in WordPress
-3. Use the Settings->Film Equipment Rental screen to configure the plugin
+1. Download the latest stable release from the [GitHub releases page](https://github.com/JensS/Film-Equipment-Rental/releases).
+2. Upload the plugin files to `/wp-content/plugins/gear` or use the WordPress plugin upload feature.
+3. Activate the plugin through the 'Plugins' screen in WordPress.
+4. Use the Settings->Film Equipment Rental screen to configure the plugin.
 
 == Frequently Asked Questions ==
 
@@ -53,3 +54,7 @@ Yes, the plugin includes comprehensive earnings tracking per equipment item and 
 
 = 1.0 =
 Initial release of the Film Equipment Rental plugin.
+
+== Updating ==
+
+The plugin supports automatic updates from the GitHub repository. It will check for updates and install them automatically.

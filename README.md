@@ -41,9 +41,14 @@ A WordPress plugin for filmmakers to track ROI on their equipment rentals. Creat
 
 ## Installation
 
-1. Upload to `/wp-content/plugins/`
-2. Activate through WordPress plugins menu
-3. Configure settings under "Equipment Rental"
+1. Download the latest stable release from the [GitHub releases page](https://github.com/JensS/Film-Equipment-Rental/releases).
+2. Upload the plugin files to `/wp-content/plugins/gear` or use the WordPress plugin upload feature.
+3. Activate the plugin through the 'Plugins' screen in WordPress.
+4. Configure settings under "Equipment Rental".
+
+## Updating
+
+The plugin supports automatic updates from the GitHub repository. It will check for updates and install them automatically.
 
 ## Settings
 
