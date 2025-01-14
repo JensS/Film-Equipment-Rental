@@ -11,3 +11,4 @@ tests/
 .phpunit.*
 vendor/
 sql_dumps/
+build/

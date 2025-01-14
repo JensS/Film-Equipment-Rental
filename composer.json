@@ -2,8 +2,5 @@
     "require": {
         "dompdf/dompdf": "^1.0",
         "yahnis-elsts/plugin-update-checker": "^5.5"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^11.5"
     }
 }

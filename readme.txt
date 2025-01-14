@@ -2,8 +2,8 @@
 Contributors: jenssage
 Tags: rental, film equipment, inventory management
 Requires at least: 5.8
-Tested up to: 6.4
-Stable tag: 1.0
+Tested up to: 6.7.1
+Stable tag: 1.1
 Requires PHP: 7.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -42,6 +42,10 @@ Navigate to Film Equipment Rental -> Add New Equipment in your WordPress admin p
 Yes, the plugin includes comprehensive earnings tracking per equipment item and rental session.
 
 == Changelog ==
+
+= 1.1 =
+* Multiple images per gear item
+* fixes to the ROI calcs
 
 = 1.0 =
 * Initial release

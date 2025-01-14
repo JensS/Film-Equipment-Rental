@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Film Equipment Rental
  * Description: Manages film equipment rental inventory with pricing and statistics
- * Version: 1.0
+ * Version: 1.1
  * Author: Jens Sage 
  * Author URI:  https://www.jenssage.com
  * License: GPL v3
@@ -17,6 +17,7 @@ if (!defined('ABSPATH')) {
 
 register_activation_hook(__FILE__, 'fer_activate_plugin');
 
+define('FER_VERSION', "1.1");
 define('FER_SLUG', "film-equipment-rental");
 define('FER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FER_DEFAULT_BRANDS', array(
@@ -64,7 +65,7 @@ function fer_activate_plugin() {
     fer_create_tables();
     
     // Add version to options table
-    add_option('fer_version', '1.0');
+    add_option('fer_version', '1.1');
     
     // Initialize categories if they don't exist
     if (!get_option('fer_categories')) {
@@ -168,6 +169,28 @@ function fer_create_tables() {
         error_log("Earnings table exists: " . ($earnings_exists ? 'yes' : 'no'));
     }
 }
+
+/**
+ * Initialize the plugin
+ * and do stuff like:
+ * Migrate from one version to another
+ */
+function fer_init() {
+    if (get_option('fer_version') !== FER_VERSION) {
+        
+        // Migrate from 1.0 to 1.1
+        if (get_option('fer_version') === '1.0') {
+            // Add new columns to equipment table
+            global $wpdb;
+            $wpdb->query($sql);
+            
+            // Update plugin version
+            update_option('fer_version', '1.1');
+        }
+        
+    }
+}
+add_action( 'init', 'fer_init' );
 
 // Debug log function
 function fer_debug_log($message, $data = null) {

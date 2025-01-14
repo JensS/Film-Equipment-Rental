@@ -21,7 +21,7 @@ function fer_enqueue_scripts($hook) {
             'fer-equipment-form',
             fer_url() . '/js/equipment-form.js',
             array('jquery'),
-            '1.0',
+            FER_VERSION,
             true
         );
         wp_localize_script('fer-equipment-form', 'ferAjax', $ajax_data);
@@ -34,7 +34,7 @@ function fer_enqueue_scripts($hook) {
             'fer-equipment-form',
             fer_url() . '/js/equipment-form.js',
             array('jquery', 'media-upload'),
-            '1.0',
+            FER_VERSION,
             true
         );
         wp_localize_script('fer-equipment-form', 'ferAjax', $ajax_data);
@@ -46,7 +46,7 @@ function fer_enqueue_scripts($hook) {
             'fer-rental-form',
             fer_url() .'/js/rental-form.js',
             array('jquery'),
-            '1.0',
+            FER_VERSION,
             true
         );
         wp_localize_script('fer-rental-form', 'ferAjax', array_merge($ajax_data, array(
@@ -61,7 +61,7 @@ function fer_enqueue_scripts($hook) {
             'fer-statistics',
             fer_url() . '/js/statistics.js',
             array('jquery', 'chart-js'),
-            '1.0',
+            FER_VERSION,
             true
         );
         wp_localize_script('fer-statistics', 'ferAjax', $ajax_data);
@@ -74,7 +74,7 @@ function fer_enqueue_scripts($hook) {
             'fer-settings-form',
             fer_url() . '/js/settings-form.js',
             array('jquery', 'media-upload'),
-            '1.0',
+            FER_VERSION,
             true
         );
         wp_localize_script('fer-settings-form', 'ferAjax', $ajax_data);
@@ -104,7 +104,7 @@ add_action('admin_enqueue_scripts', 'fer_enqueue_scripts');
             'fer-public-script',
             fer_url() . 'public/js/gear.js',
             array('jquery'),
-            '1.0',
+            FER_VERSION,
             true
         );
     }

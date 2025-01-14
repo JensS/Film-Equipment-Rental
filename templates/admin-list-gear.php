@@ -172,7 +172,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Remove "SN: " from serial number value
         if (field === 'serial_number') {
-            originalValue = originalValue.replace('SN: ', '');
+            originalValue = originalValue.replace('SN: ', '').trim();
+            if (originalValue == '–') {
+                originalValue = '';
+            }
         }
 
         // Handle different field types
