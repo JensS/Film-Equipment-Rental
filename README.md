@@ -4,6 +4,8 @@
 
 A WordPress plugin for filmmakers to track ROI on their equipment rentals. Created to solve the common issue of not knowing whether gear investments are actually profitable, helping to make more informed purchasing decisions.
 
+![Gear Plugin](gear-plugin.jpg)
+
 ## Key Features
 
 ### Equipment Management
