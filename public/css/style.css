@@ -137,16 +137,19 @@
 
 .fer-lightbox-content {
     position: relative;
-    margin: auto;
+    margin: 5% auto;
     padding: 20px;
     width: 80%;
     max-width: 800px;
-    padding-top: 20%;
+    background-color: #fff;
+    border-radius: 8px;
+    top: 10%;
 }
 
 .fer-lightbox-content img {
     width: 100%;
-    height: auto;
+    max-height: 400px;
+    object-fit: cover;
 }
 
 .fer-lightbox-close {
@@ -207,4 +210,103 @@
     background-color: #333;
     color: #fff;
     border-color: #333;
+}
+.fer-slideshow {
+    position: relative;
+}
+
+.fer-slideshow img {
+    display: none;
+    width: 100%;
+}
+
+.fer-slideshow-prev, .fer-slideshow-next, .fer-lightbox-prev, .fer-lightbox-next  {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    user-select: none;
+    z-index: 10;
+    text-decoration: none;
+    
+}
+
+.fer-slideshow-prev {
+    left: 10px;
+}
+
+.fer-slideshow-next {
+    right: 10px;
+}
+
+.fer-lightbox {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.fer-lightbox-content {
+    position: relative;
+    margin: 5% auto;
+    padding: 20px;
+    width: 80%;
+    max-width: 800px;
+    background-color: #fff;
+    border-radius: 8px;
+    top: 10%;
+}
+
+.fer-lightbox-content img {
+    width: 100%;
+    max-height: 60vh;
+    object-fit: cover;
+}
+
+.fer-lightbox-close {
+    position: absolute;
+    top: 10px;
+    right: 25px;
+    color: #fff;
+    font-size: 35px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.fer-lightbox-slideshow {
+    position: relative;
+    text-align: center;
+}
+
+.fer-lightbox-slides img {
+    width: 100%;
+    display: none;
+}
+
+
+.fer-lightbox-prev {
+    left: 10px;
+}
+
+.fer-lightbox-next {
+    right: 10px;
+}
+
+.fer-lightbox-details {
+    margin-top: 20px;
+}
+
+.fer-lightbox-details h2 {
+    margin: 0 0 10px;
+}
+
+.fer-lightbox-details p {
+    margin: 5px 0;
 }

@@ -58,11 +58,13 @@ $categories = fer_get_categories();
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($items as $item): ?>
+            <?php foreach ($items as $item): 
+                $image = $wpdb->get_var($wpdb->prepare("SELECT url FROM {$wpdb->prefix}film_equipment_images WHERE equipment_id = %d ORDER BY id ASC LIMIT 1", $item->id));
+            ?>
                 <tr data-id="<?php echo $item->id; ?>">
                     <td rowspan="2">
-                        <?php if ($item->image_url): ?>
-                            <img src="<?php echo esc_url($item->image_url); ?>" alt="" style="max-height: 60px; object-fit: cover;">
+                        <?php if ($image): ?>
+                            <img src="<?php echo esc_url($image); ?>" alt="" style="max-height: 60px; object-fit: cover;">
                         <?php else: ?>
                             <div class="fer-placeholder"><?php echo $categories[$item->category]['icon']; ?></div>
                         <?php endif; ?>

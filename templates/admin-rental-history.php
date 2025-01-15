@@ -11,15 +11,14 @@ $sessions = $wpdb->get_results("
         rs.*,
         GROUP_CONCAT(e.name SEPARATOR ', ') as equipment_names,
         SUM(ee.earnings) as total_earnings,
-        SUM(e.daily_rate * rs.rental_days) as standard_total,
-        (SUM(e.daily_rate * rs.rental_days) - SUM(ee.earnings)) as total_discount,
-        rs.package_deal
+        SUM(e.daily_rate * rs.rental_days) as standard_total
     FROM $sessions_table rs
     JOIN $earnings_table ee ON rs.id = ee.session_id
     JOIN $equipment_table e ON ee.equipment_id = e.id
     GROUP BY rs.id
     ORDER BY rs.rental_date DESC
 ");
+
 ?>
 
 <div class="wrap">
@@ -34,20 +33,19 @@ $sessions = $wpdb->get_results("
             <thead>
                 <tr>
                     <th data-sort="rental_date" style="text-align:right">Date</th>
-                    <th data-sort="rental_days" style="width:3%;text-align:right">Days</th>
+                    <th data-sort="rental_days" style="width:4%;text-align:right">Days</th>
                     <th data-sort="equipment_names" style="width:15%">Equipment</th>
                     <th data-sort="standard_total" style="text-align:right">Standard Total</th>
-                    <th data-sort="total_earnings" style="text-align:right">Actual Income</th>
+                    <th data-sort="total_actual_income" style="text-align:right">Actual Income</th>
                     <th data-sort="total_discount" style="text-align:right">Discount</th>
                     <th data-sort="notes" style="">Notes</th>
-                    <th data-sort="package_deal" style="">Package Deal</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($sessions as $session): 
                     $discount_percentage = ($session->standard_total > 0) 
-                        ? ($session->total_discount / $session->standard_total * 100) 
+                        ? (($session->standard_total - $session->total_earnings) / $session->standard_total * 100) 
                         : 0;
                     ?>
                     <tr>
@@ -57,8 +55,7 @@ $sessions = $wpdb->get_results("
                         <td class="number" style="text-align:right"><?php echo fer_format_currency($session->standard_total); ?></td>
                         <td class="number" style="text-align:right"><?php echo fer_format_currency($session->total_earnings); ?></td>
                         <td class="number" style="text-align:right"><?php echo number_format($discount_percentage, 1); ?>%</td>
-                        <td><?php echo esc_html($session->notes); ?></td>
-                        <td><?php echo $session->package_deal ? 'Yes' : 'No'; ?></td>
+                        <td><?php echo esc_html(stripslashes($session->notes)); ?></td>
                         <td>
                             <a href="<?php echo admin_url('admin.php?page=add-rental&edit=' . $session->id); ?>" 
                                class="button button-small" title="Edit">✏️</a>

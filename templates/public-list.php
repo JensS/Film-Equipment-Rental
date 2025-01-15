@@ -87,8 +87,9 @@ if ($enable_pagination === '1') {
                     foreach ($category_items as $group):
                         $item = $group['item'];
                         $count = $group['count'];
+                        $images = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}film_equipment_images WHERE equipment_id = %d", $item->id));
                         ?>
-                        <div class="fer-item">
+                        <div class="fer-item" data-id="<?php echo $item->id; ?>">
                             <?php if ($count > 1): ?>
                                 <div class="fer-item-count"><?php echo $count; ?> available</div>
                             <?php endif; ?>
@@ -112,8 +113,9 @@ if ($enable_pagination === '1') {
             foreach ($grouped_items as $group):
                 $item = $group['item'];
                 $count = $group['count'];
+                $images = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}film_equipment_images WHERE equipment_id = %d", $item->id));
                 ?>
-                <div class="fer-item">
+                <div class="fer-item" data-id="<?php echo $item->id; ?>">
                     <?php if ($count > 1): ?>
                         <div class="fer-item-count"><?php echo $count; ?> available</div>
                     <?php endif; ?>
@@ -141,6 +143,17 @@ if ($enable_pagination === '1') {
 <div id="fer-lightbox" class="fer-lightbox">
     <span class="fer-lightbox-close">&times;</span>
     <div class="fer-lightbox-content">
-        <img id="fer-lightbox-img" src="" alt="">
+        <div class="fer-lightbox-slideshow">
+            <div class="fer-lightbox-slides"></div>
+            <a class="fer-lightbox-prev">&#10094;</a>
+            <a class="fer-lightbox-next">&#10095;</a>
+        </div>
+        <div class="fer-lightbox-details">
+            <h2 id="fer-lightbox-title"></h2>
+            <p id="fer-lightbox-rate"></p>
+            <p id="fer-lightbox-short-description"></p>
+            <p id="fer-lightbox-description"></p>
+        </div>
     </div>
 </div>
+<script src="<?php echo plugin_dir_url(__FILE__); ?>../public/js/gear.js"></script>

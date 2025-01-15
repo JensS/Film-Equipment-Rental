@@ -103,21 +103,54 @@
     max-width: 900px;
 }
 
+.fer-add-rental-form input[type="text"],
+.fer-add-rental-form input[type="number"],
+.fer-add-rental-form input[type="date"],
+.fer-add-rental-form textarea,
+.fer-add-rental-form select,
+.fer-equipment-form input[type="text"],
+.fer-equipment-form input[type="number"],
+.fer-equipment-form input[type="date"],
+.fer-equipment-form input[type="url"],
+.fer-equipment-form textarea,
+.fer-equipment-form select {
+    width: 100%;
+    max-width: 500px;
+    padding: 8px;
+    margin-bottom: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
 /* Rental items grid */
 .rental-item {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 10px;
-    align-items: start;
+    display: block;
     margin-bottom: 10px;
 }
 
-.rental-item select {
-    min-width: 300px;
+.rental-item label {
+    display: inline-block;
+    margin-bottom: 5px;
+    font-size: 11px;
+}
+.rental-item > .column {
+    display: inline-block;
+    width: 20%;
+}
+.rental-item button {
+margin-top:10px;
 }
 
+.rental-item select,
 .rental-item input[type="number"] {
-    width: 150px;
+    display: inline-block;
+    padding: 5px;
+    margin-right: 10px;
+}
+
+.rental-item .remove-item {
+    display: inline-block;
+    margin-left: auto;
 }
 
 /* Rental summary box */
@@ -147,6 +180,7 @@
     font-weight: normal;
     color: #666;
 }
+
 
 /* Statistics page styling */
 .fer-stats-summary {

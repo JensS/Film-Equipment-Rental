@@ -93,25 +93,17 @@ function fer_format_date($date_string) {
 function fer_get_statistics($year = null) {
     global $wpdb;
     $year_condition = $year
-        ? $wpdb->prepare('WHERE YEAR(rental_date) = %d', $year)
+        ? $wpdb->prepare('WHERE YEAR(rs.rental_date) = %d', $year)
         : '';
 
     // Query #1: overall stats without large JOIN
     $overall_stats = $wpdb->get_row("
         SELECT
-            COUNT(id) AS total_rentals,
-            SUM(
-                CASE WHEN package_deal = 'yes'
-                     THEN package_amount
-                     ELSE COALESCE((
-                         SELECT SUM(earnings)
-                         FROM {$wpdb->prefix}equipment_earnings
-                         WHERE session_id = rs.id
-                     ), 0)
-                END
-            ) AS total_revenue,
-            AVG(rental_days) AS avg_rental_days
+            COUNT(DISTINCT rs.id) AS total_rentals,
+            SUM(ee.earnings) AS total_revenue,
+            AVG(rs.rental_days) AS avg_rental_days
         FROM {$wpdb->prefix}rental_sessions rs
+        LEFT JOIN {$wpdb->prefix}equipment_earnings ee ON rs.id = ee.session_id
         $year_condition
     ");
 
@@ -154,44 +146,68 @@ function fer_get_statistics($year = null) {
         $overall_stats->avg_discount = 0;
     }
 
-    // Fix equipment earnings and ROI display (use CASE for package deals, then sum earnings)
+    // Fetch rental data for equipment
     $equipment_stats = $wpdb->get_results("
         SELECT 
-            e.*,
-            COUNT(DISTINCT rs.id) as rental_count,
-            COALESCE(SUM(ee.earnings), 0) as total_earnings,
-            AVG(rs.rental_days) as avg_rental_days,
-            COALESCE(SUM(ee.earnings), 0) - e.purchase_price as net_profit,
-            ROUND(
-                CASE WHEN e.purchase_price > 0 THEN
-                    ((COALESCE(SUM(ee.earnings), 0) - e.purchase_price) / e.purchase_price * 100)
-                ELSE 0 END
-            , 1) as roi_percentage,
-            MAX(rs.rental_date) as last_rented
+            e.id,
+            rs.rental_date,
+            ee.earnings,
+            rs.rental_days
         FROM {$wpdb->prefix}film_equipment e
         LEFT JOIN {$wpdb->prefix}equipment_earnings ee ON e.id = ee.equipment_id
         LEFT JOIN {$wpdb->prefix}rental_sessions rs ON ee.session_id = rs.id
         $year_condition
-        GROUP BY e.id
-        ORDER BY net_profit DESC
     ");
+
+    // Fetch all equipment data
+    $all_equipment = $wpdb->get_results("
+        SELECT * FROM {$wpdb->prefix}film_equipment
+    ");
+
+    // Calculate statistics in PHP
+    $equipment_data = [];
+    foreach ($all_equipment as $row) {
+        $equipment_data[$row->id] = (object) [
+            'name' => $row->name,
+            'brand' => $row->brand,
+            'purchase_price' => $row->purchase_price,
+            'total_earnings' => 0,
+            'net_profit' => 0,
+            'roi_percentage' => 0,
+            'rental_count' => 0,
+            'avg_rental_days' => 0,
+            'last_rented' => null,
+            'purchase_date' => $row->purchase_date
+        ];
+    }
+
+    foreach ($equipment_stats as $row) {
+        if (isset($equipment_data[$row->id])) {
+            $equipment = &$equipment_data[$row->id];
+            $earnings = $row->earnings;
+            $equipment->total_earnings += $earnings;
+            $equipment->net_profit = $equipment->total_earnings - $equipment->purchase_price;
+            $equipment->roi_percentage = $equipment->purchase_price > 0 ? ($equipment->net_profit / $equipment->purchase_price) * 100 : 0;
+            $equipment->rental_count++;
+            $equipment->avg_rental_days += $row->rental_days;
+            $equipment->last_rented = max($equipment->last_rented, $row->rental_date);
+        }
+    }
+
+    foreach ($equipment_data as $equipment) {
+        if ($equipment->rental_count > 0) {
+            $equipment->avg_rental_days /= $equipment->rental_count;
+        }
+    }
 
     // Monthly trend data with fixed revenue calculation
     $monthly_trend = $wpdb->get_results("
         SELECT 
             DATE_FORMAT(rs.rental_date, '%Y-%m') as month,
-            SUM(
-                CASE WHEN rs.package_deal = 'yes'
-                     THEN rs.package_amount
-                     ELSE COALESCE((
-                         SELECT SUM(ee.earnings)
-                         FROM {$wpdb->prefix}equipment_earnings ee
-                         WHERE ee.session_id = rs.id
-                     ), 0)
-                END
-            ) as revenue,
+            SUM(ee.earnings) as revenue,
             COUNT(DISTINCT rs.id) as rental_count
         FROM {$wpdb->prefix}rental_sessions rs
+        LEFT JOIN {$wpdb->prefix}equipment_earnings ee ON rs.id = ee.session_id
         $year_condition
         GROUP BY month
         ORDER BY month ASC
@@ -202,18 +218,10 @@ function fer_get_statistics($year = null) {
         SELECT 
             c.name,
             COUNT(DISTINCT rs.id) as rental_count,
-            SUM(
-                CASE WHEN rs.package_deal = 'yes'
-                     THEN rs.package_amount
-                     ELSE COALESCE((
-                         SELECT SUM(ee.earnings)
-                         FROM {$wpdb->prefix}equipment_earnings ee
-                         WHERE ee.session_id = rs.id
-                     ), 0)
-                END
-            ) as total_revenue
+            SUM(ee.earnings) as total_revenue
         FROM {$wpdb->prefix}film_clients c
         LEFT JOIN {$wpdb->prefix}rental_sessions rs ON c.id = rs.client_id
+        LEFT JOIN {$wpdb->prefix}equipment_earnings ee ON rs.id = ee.session_id
         $year_condition
         GROUP BY c.id
         ORDER BY total_revenue DESC
@@ -222,7 +230,7 @@ function fer_get_statistics($year = null) {
 
     return array(
         'overall' => $overall_stats,
-        'equipment' => $equipment_stats,
+        'equipment' => $equipment_data,
         'monthly_trend' => $monthly_trend,
         'top_clients' => $top_clients
     );
@@ -269,14 +277,21 @@ function fer_format_structured_description($text) {
 }
 
 function fer_render_equipment_item($item, $categories) {
+    global $wpdb;
     ?>
     <div class="fer-item" id="item-<?php echo $item->id; ?>">
         <?php 
-        $image_url = !empty($item->image_url) ? $item->image_url : '';
-        if ($image_url): ?>
-            <img src="<?php echo esc_url($image_url); ?>" 
-                 alt="<?php echo esc_attr($item->name); ?>" 
-                 class="fer-lightbox-trigger">
+        $images = $wpdb->get_results($wpdb->prepare("SELECT url FROM {$wpdb->prefix}film_equipment_images WHERE equipment_id = %d ORDER BY id ASC", $item->id));
+        if ($images): ?>
+            <div class="fer-slideshow">
+                <?php foreach ($images as $image): ?>
+                    <img src="<?php echo esc_url($image->url); ?>" 
+                         alt="<?php echo esc_attr($item->name); ?>" 
+                         class="fer-lightbox-trigger">
+                <?php endforeach; ?>
+                <a class="fer-slideshow-prev">&#10094;</a>
+                <a class="fer-slideshow-next">&#10095;</a>
+            </div>
         <?php else: ?>
             <div class="fer-placeholder"><?php echo $categories[$item->category]['icon']; ?></div>
         <?php endif; ?>

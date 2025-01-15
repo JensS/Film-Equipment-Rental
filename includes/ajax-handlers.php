@@ -1,7 +1,6 @@
 <?php
 
 function fer_save_equipment() {
-    fer_debug_log('Received equipment save request', $_POST);
 
     if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'fer_nonce')) {
         fer_debug_log('Nonce verification failed');
@@ -17,54 +16,63 @@ function fer_save_equipment() {
     
     global $wpdb;
     $table = $wpdb->prefix . 'film_equipment';
-    
-    try {
-        $data = array(
-            'name' => isset($_POST['name']) ? wp_unslash(sanitize_text_field($_POST['name'])) : '',
-            'brand' => isset($_POST['brand']) ? sanitize_text_field($_POST['brand']) : '', // Add this line
-            'description' => isset($_POST['description']) ? wp_unslash(wp_kses_post($_POST['description'])) : '',
-            'short_description' => isset($_POST['short_description']) ? wp_unslash(wp_kses_post($_POST['short_description'])) : '',
-            'category' => isset($_POST['category']) ? sanitize_text_field($_POST['category']) : '',
-            'daily_rate' => isset($_POST['daily_rate']) ? floatval($_POST['daily_rate']) : 0,
-            'purchase_price' => isset($_POST['purchase_price']) ? floatval($_POST['purchase_price']) : 0,
-            'purchase_date' => isset($_POST['purchase_date']) ? sanitize_text_field($_POST['purchase_date']) : '',
-            'current_value' => isset($_POST['current_value']) ? floatval($_POST['current_value']) : 0,
-            'image_url' => isset($_POST['image_url']) ? esc_url_raw($_POST['image_url']) : ''
+
+    $data = array(
+        'name' => isset($_POST['name']) ? wp_unslash(sanitize_text_field($_POST['name'])) : '',
+        'brand' => isset($_POST['brand']) ? sanitize_text_field($_POST['brand']) : '', // Add this line
+        'description' => isset($_POST['description']) ? wp_unslash(wp_kses_post($_POST['description'])) : '',
+        'short_description' => isset($_POST['short_description']) ? wp_unslash(wp_kses_post($_POST['short_description'])) : '',
+        'category' => isset($_POST['category']) ? sanitize_text_field($_POST['category']) : '',
+        'daily_rate' => isset($_POST['daily_rate']) ? floatval($_POST['daily_rate']) : 0,
+        'purchase_price' => isset($_POST['purchase_price']) ? floatval($_POST['purchase_price']) : 0,
+        'purchase_date' => isset($_POST['purchase_date']) ? sanitize_text_field($_POST['purchase_date']) : '',
+        'current_value' => isset($_POST['current_value']) ? floatval($_POST['current_value']) : 0,
+    );
+
+    // Check if we're updating an existing item
+    $equipment_id = isset($_POST['equipment_id']) ? intval($_POST['equipment_id']) : 0;
+    $images = isset($_POST['images']) ? array_map('esc_url_raw', $_POST['images']) : [];
+
+    if ($equipment_id > 0) {
+        // Update existing equipment
+        $result = $wpdb->update(
+            $table,
+            $data,
+            array('id' => $equipment_id)
         );
+        fer_debug_log('Update result', $result);
 
-        fer_debug_log('Prepared data for insert/update', $data);
-
-        // Check if we're updating an existing item
-        $equipment_id = isset($_POST['equipment_id']) ? intval($_POST['equipment_id']) : 0;
-        
-        if ($equipment_id > 0) {
-            // Update existing equipment
-            $result = $wpdb->update(
-                $table,
-                $data,
-                array('id' => $equipment_id)
-            );
-            fer_debug_log('Update result', $result);
-        } else {
-            // Insert new equipment
-            $result = $wpdb->insert($table, $data);
-            $equipment_id = $wpdb->insert_id;
-            fer_debug_log('Insert result', $result);
+        // Update images
+        $wpdb->delete("{$wpdb->prefix}film_equipment_images", ['equipment_id' => $equipment_id]);
+        foreach ($images as $image) {
+            $wpdb->insert("{$wpdb->prefix}film_equipment_images", [
+                'equipment_id' => $equipment_id,
+                'url' => $image
+            ]);
         }
+    } else {
+        // Insert new equipment
+        $result = $wpdb->insert($table, $data);
+        $equipment_id = $wpdb->insert_id;
+        fer_debug_log('Insert result', $result);
 
-        if ($result === false) {
-            fer_debug_log('Database error', $wpdb->last_error);
-            wp_send_json_error('Database error: ' . $wpdb->last_error);
-        } else {
-            wp_send_json_success(array(
-                'message' => 'Equipment saved successfully',
-                'id' => $equipment_id
-            ));
+        // Insert images
+        foreach ($images as $image) {
+            $wpdb->insert("{$wpdb->prefix}film_equipment_images", [
+                'equipment_id' => $equipment_id,
+                'url' => $image
+            ]);
         }
+    }
 
-    } catch (Exception $e) {
-        fer_debug_log('Exception caught', $e->getMessage());
-        wp_send_json_error('Error: ' . $e->getMessage());
+    if ($result === false) {
+        fer_debug_log('Database error', $wpdb->last_error);
+        wp_send_json_error('Database error: ' . $wpdb->last_error);
+    } else {
+        wp_send_json_success(array(
+            'message' => 'Equipment saved successfully',
+            'id' => $equipment_id
+        ));
     }
 }
 add_action('wp_ajax_fer_save_equipment', 'fer_save_equipment');
@@ -83,68 +91,50 @@ add_action('wp_ajax_fer_delete_equipment', 'fer_delete_equipment');
 
 function fer_save_rental_session() {
     if (!isset($_POST['rental_nonce']) || !wp_verify_nonce($_POST['rental_nonce'], 'fer_rental_nonce')) {
-        wp_die('Security check failed');
+        wp_die('Invalid nonce');
     }
-    
-    if (!current_user_can('manage_options')) {
-        wp_die('Permission denied');
-    }
-    
-    global $wpdb;
-    
-    try {
-        $wpdb->query('START TRANSACTION');
-        
-        $session_id = isset($_POST['session_id']) ? intval($_POST['session_id']) : 0;
-        $session_data = array(
-            'rental_date' => sanitize_text_field($_POST['rental_date']),
-            'rental_days' => intval($_POST['rental_days']),
-            'notes' => sanitize_textarea_field($_POST['notes']),
-            'client_id' => !empty($_POST['client_id']) ? intval($_POST['client_id']) : null,
-            'package_deal' => sanitize_text_field($_POST['package_deal']),
-            'package_amount' => !empty($_POST['package_amount']) ? floatval($_POST['package_amount']) : null
-        );
 
-        fer_debug_log('Saving rental session with data:', $session_data);
-        
-        if ($session_id > 0) {
-            $wpdb->update($wpdb->prefix . 'rental_sessions', $session_data, array('id' => $session_id));
-        } else {
-            $wpdb->insert($wpdb->prefix . 'rental_sessions', $session_data);
-            $session_id = $wpdb->insert_id;
-        }
-        
-        // Clear existing earnings for this session if it's an update
-        if ($session_id > 0) {
-            $wpdb->delete($wpdb->prefix . 'equipment_earnings', array('session_id' => $session_id));
-        }
-        
-        // Insert earnings
-        if (isset($_POST['equipment']) && is_array($_POST['equipment'])) {
-            foreach ($_POST['equipment'] as $index => $equipment_id) {
-                if (empty($equipment_id)) continue;
-                
-                $wpdb->insert(
-                    $wpdb->prefix . 'equipment_earnings',
-                    array(
-                        'session_id' => $session_id,
-                        'equipment_id' => intval($equipment_id),
-                        'earnings' => floatval($_POST['earnings'][$index])
-                    )
-                );
-            }
-        }
-        
-        $wpdb->query('COMMIT');
-        
-        wp_safe_redirect(admin_url('admin.php?page=rental-history&updated=true'));
-        exit;
-        
-    } catch (Exception $e) {
-        $wpdb->query('ROLLBACK');
-        fer_debug_log('Error saving rental:', $e->getMessage());
-        wp_die('Error: ' . $e->getMessage());
+    if (!current_user_can('manage_options')) {
+        wp_die('Insufficient permissions');
     }
+
+    global $wpdb;
+    $session_id = isset($_POST['session_id']) ? intval($_POST['session_id']) : 0;
+    $client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : null;
+    $notes = isset($_POST['notes']) ? sanitize_text_field($_POST['notes']) : '';
+    $rental_date = isset($_POST['rental_date']) ? sanitize_text_field($_POST['rental_date']) : '';
+    $rental_days = isset($_POST['rental_days']) ? intval($_POST['rental_days']) : 0;
+
+    $data = [
+        'client_id' => $client_id,
+        'notes' => $notes,
+        'rental_date' => $rental_date,
+        'rental_days' => $rental_days
+    ];
+
+    if ($session_id) {
+        $wpdb->update("{$wpdb->prefix}rental_sessions", $data, ['id' => $session_id]);
+    } else {
+        $wpdb->insert("{$wpdb->prefix}rental_sessions", $data);
+        $session_id = $wpdb->insert_id;
+    }
+
+    // Save equipment earnings
+    $wpdb->delete("{$wpdb->prefix}equipment_earnings", ['session_id' => $session_id]);
+
+    if (isset($_POST['equipment']) && is_array($_POST['equipment'])) {
+        foreach ($_POST['equipment'] as $index => $equipment_id) {
+            $earnings = isset($_POST['earnings'][$index]) ? floatval($_POST['earnings'][$index]) : 0;
+
+            $wpdb->insert("{$wpdb->prefix}equipment_earnings", [
+                'session_id' => $session_id,
+                'equipment_id' => intval($equipment_id),
+                'earnings' => $earnings
+            ]);
+        }
+    }
+
+    wp_redirect(admin_url('admin.php?page=rental-history'));
 }
 add_action('admin_post_save_rental', 'fer_save_rental_session');
 
@@ -263,10 +253,6 @@ function fer_import_data($data, $table) {
                     $item[$key] = intval($value);
                     break;
                     
-                case 'package_amount':
-                case 'earnings':
-                    $item[$key] = floatval($value);
-                    break;
                     
                 default:
                     $item[$key] = sanitize_text_field($value);
@@ -691,3 +677,5 @@ function fer_delete_rental() {
     }
 }
 add_action('wp_ajax_fer_delete_rental', 'fer_delete_rental');
+
+

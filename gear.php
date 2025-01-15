@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Film Equipment Rental
  * Description: Manages film equipment rental inventory with pricing and statistics
- * Version: 1.1
+ * Version: 1.2
  * Author: Jens Sage 
  * Author URI:  https://www.jenssage.com
  * License: GPL v3
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 
 register_activation_hook(__FILE__, 'fer_activate_plugin');
 
-define('FER_VERSION', "1.1");
+define('FER_VERSION', "1.2");
 define('FER_SLUG', "film-equipment-rental");
 define('FER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FER_DEFAULT_BRANDS', array(
@@ -52,8 +52,6 @@ $myUpdateChecker = PucFactory::buildUpdateChecker(
 	FER_SLUG
 );
 
-// @todo Set the branch that contains the stable release. 
-$myUpdateChecker->setBranch('stable');
 $myUpdateChecker->getVcsApi()->enableReleaseAssets();
 
 
@@ -120,7 +118,6 @@ function fer_create_tables() {
         purchase_price decimal(10,2),
         purchase_date date,
         current_value decimal(10,2),
-        image_url varchar(255),
         status varchar(20) DEFAULT 'active',
         PRIMARY KEY  (id)
     ) $charset_collate;";
@@ -134,8 +131,6 @@ function fer_create_tables() {
         rental_date date NOT NULL,
         rental_days int NOT NULL,
         notes text,
-        package_deal varchar(3) DEFAULT 'no',  
-        package_amount decimal(10,2) DEFAULT NULL, 
         client_id mediumint(9) DEFAULT NULL,
         created_at datetime DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY  (id),
@@ -158,6 +153,18 @@ function fer_create_tables() {
 
     dbDelta($sql3);
 
+    // Create equipment images table
+    $images_table = $wpdb->prefix . 'film_equipment_images';
+    $sql4 = "CREATE TABLE IF NOT EXISTS $images_table (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        equipment_id mediumint(9) NOT NULL,
+        url varchar(255) NOT NULL,
+        PRIMARY KEY  (id),
+        FOREIGN KEY (equipment_id) REFERENCES {$wpdb->prefix}film_equipment(id) ON DELETE CASCADE
+    ) $charset_collate;";
+
+    dbDeltay($sql4);
+
     // Only log if WP_DEBUG is enabled
     if (defined('WP_DEBUG') && WP_DEBUG) {
         $equipment_exists = $wpdb->get_var("SHOW TABLES LIKE '$equipment_table'") === $equipment_table;
@@ -178,14 +185,36 @@ function fer_create_tables() {
 function fer_init() {
     if (get_option('fer_version') !== FER_VERSION) {
         
-        // Migrate from 1.0 to 1.1
-        if (get_option('fer_version') === '1.0') {
+        // Migrate from 1.1 to 1.2
+        if (get_option('fer_version') == '1.1') {
             // Add new columns to equipment table
             global $wpdb;
+
+            $charset_collate = $wpdb->get_charset_collate();
+        
+            // Create equipment images table
+            $images_table = $wpdb->prefix . 'film_equipment_images';
+            $sql = "CREATE TABLE IF NOT EXISTS $images_table (
+                id mediumint(9) NOT NULL AUTO_INCREMENT,
+                equipment_id mediumint(9) NOT NULL,
+                url varchar(255) NOT NULL,
+                PRIMARY KEY  (id),
+                FOREIGN KEY (equipment_id) REFERENCES {$wpdb->prefix}film_equipment(id) ON DELETE CASCADE
+            ) $charset_collate;";
+        
             $wpdb->query($sql);
+
+            // Drop image_url column from equipment table
+            $equipment_table = $wpdb->prefix . 'film_equipment';
+            $wpdb->query("ALTER TABLE $equipment_table DROP COLUMN image_url");
+
+            // Remove package_deal and package_amount columns from rental_sessions table
+            $rental_sessions_table = $wpdb->prefix . 'rental_sessions';
+            $wpdb->query("ALTER TABLE $rental_sessions_table DROP COLUMN package_deal");
+            $wpdb->query("ALTER TABLE $rental_sessions_table DROP COLUMN package_amount");
             
             // Update plugin version
-            update_option('fer_version', '1.1');
+            update_option('fer_version', '1.2');
         }
         
     }

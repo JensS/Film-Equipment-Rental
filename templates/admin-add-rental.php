@@ -63,7 +63,7 @@ $clients = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}film_clients ORDER B
                     <th><label for="notes">Project Name</label></th>
                     <td>
                         <input type="text" id="notes" name="notes" class="regular-text"
-                               value="<?php echo $rental_session ? esc_attr($rental_session->notes) : ''; ?>">
+                               value="<?php echo $rental_session ? esc_attr(stripslashes($rental_session->notes)) : ''; ?>">
                     </td>
                 </tr>
                 <tr>
@@ -88,77 +88,27 @@ $clients = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}film_clients ORDER B
                         <div id="rental-items">
                             <?php if ($rental_items): ?>
                                 <?php foreach ($rental_items as $item): ?>
-                                    <div class="rental-item">
-                                        <select name="equipment[]" class="equipment-select" required>
-                                            <option value="">Select Equipment</option>
-                                            <?php foreach (fer_get_categories() as $slug => $category): ?>
-                                                <optgroup label="<?php echo esc_attr($category["name"]); ?>">
-                                                    <?php 
-                                                    $category_items = array_filter($items, function($equip) use ($slug) {
-                                                        return $equip->category === $slug;
-                                                    });
-                                                    foreach ($category_items as $equip): ?>
-                                                        <option value="<?php echo $equip->id; ?>" 
-                                                                data-rate="<?php echo $equip->daily_rate; ?>"
-                                                                <?php selected($equip->id, $item->equipment_id); ?>>
-                                                            <?php echo esc_html((isset($equip->brand) ? $equip->brand . ' ' : '') . $equip->name); ?> 
-                                                            (<?php echo fer_format_currency($equip->daily_rate); ?>/day)
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </optgroup>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <input type="number" name="earnings[]" step="0.01" min="0" 
-                                               value="<?php echo esc_attr($item->earnings); ?>"
-                                               placeholder="Earned Amount"
-                                               required>
-                                        <button type="button" class="button remove-item">×</button>
-                                    </div>
+                                    <?php include 'admin-add-rental-list-gear.php'; ?>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <div class="rental-item">
-                                    <select name="equipment[]" class="equipment-select" required>
-                                        <option value="">Select Equipment</option>
-                                        <?php foreach (fer_get_categories() as $slug => $category): ?>
-                                            <optgroup label="<?php echo esc_attr($category["name"]); ?>">
-                                                <?php 
-                                                $category_items = array_filter($items, function($item) use ($slug) {
-                                                    return $item->category === $slug;
-                                                });
-                                                foreach ($category_items as $item): ?>
-                                                    <option value="<?php echo $item->id; ?>" 
-                                                            data-rate="<?php echo $item->daily_rate; ?>">
-                                                        <?php echo esc_html((isset($item->brand) ? $item->brand . ' ' : '') . $item->name); ?> 
-                                                        (<?php echo fer_format_currency($item->daily_rate); ?>/day)
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </optgroup>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <input type="number" name="earnings[]" step="0.01" min="0" 
-                                           placeholder="Earned Amount" required>
-                                    <button type="button" class="button remove-item">×</button>
-                                </div>
+                                <?php include 'admin-add-rental-list-gear.php'; ?>
                             <?php endif; ?>
                         </div>
                         <button type="button" id="add-item" class="button">+ Add More Equipment</button>
                     </td>
                 </tr>
                 <tr>
-                    <th><label for="package_deal">Package Deal?</label></th>
+                    <th>
+                        <label for="discount-percentage">Apply Discount Percentage:</label>
+                        <span style="font-weight: 400" class="small">(replaces rates for every rented item!)</span>
+                    </th>
                     <td>
-                        <select id="package_deal" name="package_deal">
-                            <option value="no" <?php echo $rental_session && $rental_session->package_deal === 'no' ? 'selected' : ''; ?>>No</option>
-                            <option value="yes" <?php echo $rental_session && $rental_session->package_deal === 'yes' ? 'selected' : ''; ?>>Yes</option>
-                        </select>
+                        <input type="number" id="discount-percentage" step="0.01" min="0" max="100" placeholder="Discount %" style="width: 120px;">
+                        <button type="button" id="apply-discount" class="button">Apply Discount</button>
+        
                     </td>
                 </tr>
-                <tr id="package_amount_row" style="display: <?php echo $rental_session && $rental_session->package_deal === 'yes' ? '' : 'none'; ?>;">
-                    <th><label for="package_amount">Package Amount</label></th>
-                    <td>
-                        <input type="number" id="package_amount" name="package_amount" step="0.01" min="0" placeholder="Total Package Amount" value="<?php echo $rental_session ? esc_attr($rental_session->package_amount) : ''; ?>">
-                    </td>
-                </tr>
+
             </table>
 
             <div class="fer-rental-summary">
@@ -187,3 +137,127 @@ $clients = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}film_clients ORDER B
     </div>
     <?php fer_output_footer(); ?>
 </div>
+
+
+<script>
+    // Define currency formatting function in global scope
+function fer_format_currency(amount) {
+    const formatted = amount.toFixed(2);
+    return ferAjax.currencyPosition === 'before' 
+        ? ferAjax.currency + formatted 
+        : formatted + ferAjax.currency;
+}
+
+jQuery(document).ready(function($) {
+    // Keep track of selected equipment
+    let selectedEquipment = new Set();
+
+    function calculateTotals() {
+        let standardTotal = 0;
+        let actualTotal = 0;
+        const days = parseInt($('#rental_days').val()) || 0;
+
+        $('.rental-item').each(function() {
+            const selectedOption = $('select option:selected', this);
+            const rate = parseFloat(selectedOption.data('rate')) || 0;
+            const actualIncome = parseFloat($('input[name="earnings[]"]', this).val()) || 0;
+            
+            if (selectedOption.val()) {
+                standardTotal += rate * days;
+                actualTotal += actualIncome;
+            }
+        });
+
+        const discount = standardTotal > 0 ? 
+            ((standardTotal - actualTotal) / standardTotal * 100) : 0;
+
+        $('#standard-total').text(fer_format_currency(standardTotal));
+        $('#actual-total').text(fer_format_currency(actualTotal));
+        $('#total-discount').text(discount.toFixed(1) + '%');
+    }
+
+    function updateEquipmentSelects() {
+        // Clear the set of selected equipment
+        selectedEquipment.clear();
+
+        // Gather all currently selected equipment IDs
+        $('.equipment-select').each(function() {
+            const value = $(this).val();
+            if (value) {
+                selectedEquipment.add(value);
+            }
+        });
+
+        // Update all selects to disable selected options
+        $('.equipment-select').each(function() {
+            const currentSelect = $(this);
+            const currentValue = currentSelect.val();
+
+            currentSelect.find('option').each(function() {
+                const option = $(this);
+                const optionValue = option.val();
+
+                if (optionValue && selectedEquipment.has(optionValue) && optionValue !== currentValue) {
+                    option.prop('disabled', true);
+                } else {
+                    option.prop('disabled', false);
+                }
+            });
+        });
+    }
+
+    // Event handlers
+    $('#rental-items').on('change', 'select', function() {
+        updateEquipmentSelects();
+        // Pre-fill the actual income field with the standard rate
+        const days = parseInt($('#rental_days').val()) || 0;
+        const rate = parseFloat($('option:selected', this).data('rate')) || 0;
+        $(this).closest('.rental-item').find('input[name="earnings[]"]').val((rate * days).toFixed(2));
+        calculateTotals();
+    });
+
+    $('#rental-items').on('input', 'input[name="earnings[]"]', calculateTotals);
+    $('#rental_days').on('input', function() {
+        // Update all actual income fields with new day count
+        const days = parseInt($(this).val()) || 0;
+        $('.rental-item').each(function() {
+            const rate = parseFloat($('select option:selected', this).data('rate')) || 0;
+            $('input[name="earnings[]"]', this).val((rate * days).toFixed(2));
+        });
+        calculateTotals();
+    });
+
+    $('#add-item').click(function() {
+        const newItem = $('.rental-item:first').clone();
+        newItem.find('select').val('');
+        newItem.find('input').val('');
+        $('#rental-items').append(newItem);
+        updateEquipmentSelects();
+    });
+
+    $('#rental-items').on('click', '.remove-item', function() {
+        if ($('.rental-item').length > 1) {
+            $(this).closest('.rental-item').remove();
+            updateEquipmentSelects();
+            calculateTotals();
+        }
+    });
+
+    $('#apply-discount').click(function() {
+        const discountPercentage = parseFloat($('#discount-percentage').val()) || 0;
+        if (discountPercentage > 0 && discountPercentage <= 100) {
+            $('.rental-item').each(function() {
+                const rate = parseFloat($('select option:selected', this).data('rate')) || 0;
+                const discountedIncome = rate * (1 - (discountPercentage / 100));
+                const days = parseInt($('#rental_days').val()) || 0;
+                $('input[name="earnings[]"]', this).val((discountedIncome * days).toFixed(2));
+            });
+            calculateTotals();
+        }
+    });
+
+    // Initialize
+    updateEquipmentSelects();
+    calculateTotals();
+});
+</script>

@@ -4,6 +4,7 @@ if (!defined('ABSPATH')) exit;
 global $wpdb;
 $equipment_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $equipment = $equipment_id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}film_equipment WHERE id = %d", $equipment_id)) : null;
+$images = $equipment ? $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}film_equipment_images WHERE equipment_id = %d", $equipment_id)) : [];
 ?>
 <div class="wrap">
     <h1>Add Equipment</h1>
@@ -91,14 +92,6 @@ $equipment = $equipment_id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb
                                value="<?php echo $equipment ? esc_attr($equipment->current_value) : ''; ?>">
                     </td>
                 </tr>
-                <tr>
-                    <th><label for="image_url">Image URL</label></th>
-                    <td>
-                        <input type="url" id="image_url" name="image_url" class="large-text" 
-                               value="<?php echo $equipment ? esc_url($equipment->image_url) : ''; ?>">
-                        <button type="button" class="button media-button" id="upload-image">Upload Image</button>
-                    </td>
-                </tr>
 
                 <tr>
                     <th><label for="serial_number">Serial Number</label></th>
@@ -118,6 +111,20 @@ $equipment = $equipment_id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb
                         </select>
                     </td>
                 </tr>
+                <tr>
+                    <th><label for="images">Images</label></th>
+                    <td>
+                        <div id="image-container">
+                            <?php foreach ($images as $image): ?>
+                                <div class="image-entry">
+                                    <input type="url" name="images[]" class="large-text" value="<?php echo esc_url($image->url); ?>">
+                                    <button type="button" class="button remove-image">Remove</button>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <button type="button" class="button" id="add-image">Add Image</button>
+                    </td>
+                </tr>
             </table>
             
             <p class="submit">
@@ -127,3 +134,65 @@ $equipment = $equipment_id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb
     </div>
     <?php fer_output_footer(); ?>
 </div>
+
+<script>
+    jQuery(document).ready(function($) {
+
+$('#add-image').click(function() {
+    var imageFrame = wp.media({
+        title: 'Select Equipment Image',
+        multiple: false,
+        library: {
+            type: 'image'
+        }
+    });
+
+    imageFrame.on('select', function() {
+        var attachment = imageFrame.state().get('selection').first().toJSON();
+        $('#image-container').append('<div class="image-entry"><input type="url" name="images[]" class="large-text" value="' + attachment.url + '"><button type="button" class="button remove-image">Remove</button></div>');
+    });
+
+    imageFrame.open();
+});
+
+$(document).on('click', '.remove-image', function() {
+    $(this).closest('.image-entry').remove();
+});
+
+// Equipment form submission
+$('#fer-equipment-form').submit(function(e) {
+    e.preventDefault();
+    
+    var formData = $(this).serialize();
+    formData += '&action=fer_save_equipment';
+    formData += '&nonce=' + ferAjax.nonce;
+    
+    $.post(ferAjax.ajaxurl, formData, function(response) {
+        if (response.success) {
+            window.location.href = 'admin.php?page=equipment-rental&message=saved';
+        } else {
+            alert('Error saving equipment: ' + (response.data || 'Unknown error'));
+        }
+    });
+});
+
+// Delete equipment
+$('.delete-equipment').click(function() {
+    if (!confirm('Are you sure you want to delete this item?')) {
+        return;
+    }
+    
+    var id = $(this).data('id');
+    
+    $.post(ferAjax.ajaxurl, {
+        action: 'fer_delete_equipment',
+        id: id,
+        nonce: ferAjax.nonce
+    }, function(response) {
+        if (response.success) {
+            window.location.reload();
+        }
+    });
+});
+});
+</script>

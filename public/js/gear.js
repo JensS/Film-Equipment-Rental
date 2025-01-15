@@ -1,11 +1,4 @@
 jQuery(document).ready(function($) {
-    // Use event delegation to handle click event
-    $(document).on('click', '.fer-show-more', function() {
-        var itemId = $(this).data('item');
-        var desc = $('#desc-' + itemId);
-        desc.slideToggle();
-        $(this).text(desc.is(':visible') ? 'Show Less' : 'Show Details');
-    });
 
     $('#fer-search-input').on('input', function() {
         var searchQuery = $(this).val().toLowerCase();
@@ -77,24 +70,94 @@ jQuery(document).ready(function($) {
         }));
     });
 
+    function initSlideshow() {
+        $('.fer-slideshow').each(function() {
+            var $slideshow = $(this);
+            var $images = $slideshow.find('img');
+            var currentIndex = 0;
+
+            $images.hide().eq(currentIndex).show();
+
+            $slideshow.find('.fer-slideshow-prev').click(function() {
+                $images.eq(currentIndex).hide();
+                currentIndex = (currentIndex - 1 + $images.length) % $images.length;
+                $images.eq(currentIndex).show();
+            });
+
+            $slideshow.find('.fer-slideshow-next').click(function() {
+                $images.eq(currentIndex).hide();
+                currentIndex = (currentIndex + 1) % $images.length;
+                $images.eq(currentIndex).show();
+            });
+        });
+    }
+
+    initSlideshow();
+
     // Lightbox functionality
-    var lightbox = $('#fer-lightbox');
-    var lightboxImg = $('#fer-lightbox-img');
-    var lightboxClose = $('.fer-lightbox-close');
+    $('.fer-show-more').click(function() {
+        var itemId = $(this).data('item');
+        var $item = $('#item-' + itemId);
+        var $images = $item.find('.fer-slideshow img');
+        var title = $item.find('h4').text();
+        var rate = $item.find('.fer-daily-rate').text();
+        var shortDescription = $item.find('.fer-short-description').html();
+        var longDescription = $item.find('.fer-full-description').html();
 
-    $(document).on('click', '.fer-lightbox-trigger', function() {
-        lightbox.show();
-        lightboxImg.attr('src', $(this).attr('src'));
+        var $lightbox = $('#fer-lightbox');
+        var $slidesContainer = $lightbox.find('.fer-lightbox-slides');
+        $slidesContainer.empty();
+
+        $images.each(function() {
+            var $img = $(this).clone().show();
+            $slidesContainer.append($img);
+        });
+
+        $('#fer-lightbox-title').text(title);
+        $('#fer-lightbox-rate').text(rate);
+
+        if (shortDescription.trim() === longDescription.trim()) {
+            $('#fer-lightbox-description').html(longDescription);
+            $('#fer-lightbox-short-description').hide();
+        } else {
+            $('#fer-lightbox-short-description').html(shortDescription).show();
+            $('#fer-lightbox-description').html(longDescription);
+        }
+
+        $lightbox.show();
+        initLightboxSlideshow();
     });
 
-    lightboxClose.click(function() {
-        lightbox.hide();
+    $('.fer-lightbox-close').click(function() {
+        $('#fer-lightbox').hide();
     });
 
-    lightbox.click(function(e) {
+    $('#fer-lightbox').click(function(e) {
         if (e.target === this) {
-            lightbox.hide();
+            $(this).hide();
         }
     });
+
+    function initLightboxSlideshow() {
+        var $lightbox = $('#fer-lightbox');
+        var $slides = $lightbox.find('.fer-lightbox-slides img');
+        var currentIndex = 0;
+
+        $slides.hide().eq(currentIndex).show();
+
+        $lightbox.find('.fer-lightbox-prev').click(function() {
+            $slides.eq(currentIndex).hide();
+            currentIndex = (currentIndex - 1 + $slides.length) % $slides.length;
+            $slides.eq(currentIndex).show();
+        });
+
+        $lightbox.find('.fer-lightbox-next').click(function() {
+            $slides.eq(currentIndex).hide();
+            currentIndex = (currentIndex + 1) % $slides.length;
+            $slides.eq(currentIndex).show();
+        });
+    }
+
+    initLightboxSlideshow();
 
 });
